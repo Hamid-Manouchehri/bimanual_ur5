@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Launch file parameters -->
+  <arg name="debug"     default="false" />
+
+  <arg if=      "$(arg debug)"  name="DEBUG" value="screen"/>
+  <arg unless = "$(arg debug)"  name="DEBUG" value="log"/>
+
+  <!-- Controllers config -->
+  <rosparam file="$(find ur5_gazebo)/controller/ur5_controllers.yaml" command="load" />
+
+  <!-- Load controllers -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner"
+      respawn="false"
+      output="screen"
+      args="
+      joint_states_controller
+
+      shoulder_pan_controller_r
+      shoulder_lift_controller_r
+      elbow_controller_r
+      wrist_1_controller_r
+      wrist_2_controller_r
+      wrist_3_controller_r
+      
+      shoulder_pan_controller_l
+      shoulder_lift_controller_l
+      elbow_controller_l
+      wrist_1_controller_l
+      wrist_2_controller_l
+      wrist_3_controller_l
+      ">
+  </node>
+
+  <!-- TF -->
+  <node pkg="robot_state_publisher" type="robot_state_publisher"
+        name="state_publisher">
+    <param name="publish_frequency" type="double" value="50" />
+  </node>
+
+</launch>
