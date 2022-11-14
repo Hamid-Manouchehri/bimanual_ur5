@@ -75,7 +75,7 @@ which are close to 'child_neck' frame.
 """
 
 poseOfObjInWorld_x = 0.3922
-poseOfObjInWorld_y = .1092
+poseOfObjInWorld_y = -.191
 poseOfObjInWorld_z = .609
 
 ## Attention that the sequence of orientation is xyz Euler angles:
@@ -116,23 +116,23 @@ dqctrl_des_prev = np.zeros(singleArmDof)  # TODO: we usually start from rest
 CSVFileName_plot_data = config.bimanual_ur5_dic['CSVFileName']
 pathToCSVFile = config.bimanual_ur5_dic['CSVFileDirectory']
 
-upperBodyModelFileName = config.bimanual_ur5_dic['urdfModelName_right']
+upperBodyModelFileName = config.bimanual_ur5_dic['urdfModelName']
 pathToArmURDFModels = config.bimanual_ur5_dic['urdfDirectory']
 
 loaded_model = rbdl.loadModel(pathToArmURDFModels + upperBodyModelFileName)
 
 ## create instances of publishers:
-pub_elbow = rospy.Publisher('/elbow_controller/command',
+pub_elbow = rospy.Publisher('/elbow_controller_r/command',
             Float64, queue_size=10)
-pub_shoulder_lift = rospy.Publisher('/shoulder_lift_controller/command',
+pub_shoulder_lift = rospy.Publisher('/shoulder_lift_controller_r/command',
                     Float64, queue_size=10)
-pub_shoulder_pan = rospy.Publisher('/shoulder_pan_controller/command',
+pub_shoulder_pan = rospy.Publisher('/shoulder_pan_controller_r/command',
                    Float64, queue_size=10)
-pub_wrist_1 = rospy.Publisher('/wrist_1_controller/command',
+pub_wrist_1 = rospy.Publisher('/wrist_1_controller_r/command',
               Float64, queue_size=10)
-pub_wrist_2 = rospy.Publisher('/wrist_2_controller/command',
+pub_wrist_2 = rospy.Publisher('/wrist_2_controller_r/command',
               Float64, queue_size=10)
-pub_wrist_3 = rospy.Publisher('/wrist_3_controller/command',
+pub_wrist_3 = rospy.Publisher('/wrist_3_controller_r/command',
               Float64, queue_size=10)
 
 
@@ -559,35 +559,35 @@ def JointStatesCallback(data):
     q = data.position  # class tuple, in radians
     qDot = data.velocity  # in rad/s
 
-    # dt = np.array(dt, dtype=float)
     q = np.array(q, dtype=float)
     qDot = np.array(qDot, dtype=float)
 
-    qCurrent = np.zeros(singleArmDof)
-    qDotCurrent = np.zeros(singleArmDof)
-    qDDotCurrent = np.zeros(singleArmDof)
+    qCurrent_r = np.zeros(singleArmDof)
+    qDotCurrent_r = np.zeros(singleArmDof)
+    qDDotCurrent_r = np.zeros(singleArmDof)
 
-    qCurrent[0] = q[2]  # shoulder_pan_joint
-    qCurrent[1] = q[1]  # shoulder_lift_joint
-    qCurrent[2] = q[0]  # elbow_joint
-    qCurrent[3] = q[3]  # wrist_1_joint
-    qCurrent[4] = q[4]  # wrist_2_joint
-    qCurrent[5] = q[5]  # wrist_3_joint
+    qCurrent_r[0] = q[5]  # shoulder_pan_joint
+    qCurrent_r[1] = q[3]  # shoulder_lift_joint
+    qCurrent_r[2] = q[1]  # elbow_joint
+    qCurrent_r[3] = q[7]  # wrist_1_joint
+    qCurrent_r[4] = q[9]  # wrist_2_joint
+    qCurrent_r[5] = q[11]  # wrist_3_joint
 
-    qDotCurrent[0] = qDot[2]  # shoulder_pan_joint
-    qDotCurrent[1] = qDot[1]  # shoulder_lift_joint
-    qDotCurrent[2] = qDot[0]  # elbow_joint
-    qDotCurrent[3] = qDot[3]  # wrist_1_joint
-    qDotCurrent[4] = qDot[4]  # wrist_2_joint
-    qDotCurrent[5] = qDot[5]  # wrist_3_joint
+    qDotCurrent_r[0] = qDot[5]  # shoulder_pan_joint
+    qDotCurrent_r[1] = qDot[3]  # shoulder_lift_joint
+    qDotCurrent_r[2] = qDot[1]  # elbow_joint
+    qDotCurrent_r[3] = qDot[7]  # wrist_1_joint
+    qDotCurrent_r[4] = qDot[9]  # wrist_2_joint
+    qDotCurrent_r[5] = qDot[11]  # wrist_3_joint
 
+    # print(np.round(qCurrent_r, 3))
 
     time_gaz = rospy.get_time()  # get gazebo simulation time (Sim Time)
     dt = time_gaz - time_gaz_pre + .001
     time_gaz_pre = time_gaz
 
-    qDDotCurrent = (qDotCurrent - qDotCurrent_pre) / dt
-    qDotCurrent_pre = qDotCurrent
+    qDDotCurrent_r = (qDotCurrent_r - qDotCurrent_pre) / dt
+    qDotCurrent_pre = qDotCurrent_r
 
     xDes_t, xDotDes_t, xDDotDes_t, timePrime = ChooseRef(time_gaz)
 
@@ -598,16 +598,17 @@ def JointStatesCallback(data):
     #                                             TrajectoryGeneration(time_gaz)
 
     ## detemine desired states of robot in joint-space: (qDDot_desired, ...)
-    jointPoseDes, jointVelDes, jointAccelDes = Task2Joint(qCurrent,
-                                                          qDotCurrent,
-                                                          qDDotCurrent,
+    jointPoseDes, jointVelDes, jointAccelDes = Task2Joint(qCurrent_r,
+                                                          qDotCurrent_r,
+                                                          qDDotCurrent_r,
                                                           poseTrajectoryDes,
                                                           velTrajectoryDes,
                                                           accelTrajectoryDes)
 
-    jointTau = InverseDynamic(qCurrent, qDotCurrent, qDDotCurrent,
+    jointTau = InverseDynamic(qCurrent_r, qDotCurrent_r, qDDotCurrent_r,
                               jointPoseDes, jointVelDes, jointAccelDes)
 
+    print(np.round(jointTau, 3))
     PubTorqueToGazebo(jointTau)
 
     time_ += dt

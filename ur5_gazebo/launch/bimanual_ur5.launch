@@ -35,6 +35,6 @@
 
   <include file="$(find ur5_gazebo)/launch/ur5_controllers.launch" />
 
-  <!-- <node name="main_node" pkg="ur5_gazebo" type="main_bimanual.py" output="screen"></node> -->
+  <node name="main_node" pkg="ur5_gazebo" type="main_bimanual.py" output="screen"></node>
 
 </launch>

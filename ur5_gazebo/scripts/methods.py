@@ -17,7 +17,7 @@ plotLegend = ''
 yLabel = ''
 writeHeaderOnceFlag = True
 
-linkName = 'wrist_3_link'  # TODO
+linkName = 'wrist_3_link_r'  # TODO
 workspaceDof = 6  # TODO
 
 CSVFileName_plot_data = config.bimanual_ur5_dic['CSVFileName']
