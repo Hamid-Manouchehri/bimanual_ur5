@@ -252,9 +252,6 @@
       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
     </inertial>
   </link> -->
-
-
-
   <!-- <joint name="ee_fixed_joint_r" type="fixed">
     <parent link="wrist_3_link_r"/>
     <child link="ee_link_r"/>
@@ -268,7 +265,6 @@
       <origin rpy="0 0 0" xyz="-0.01 0 0"/>
     </collision>
   </link> -->
-
   <transmission name="shoulder_pan_trans_r">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="shoulder_pan_joint_r">
@@ -323,7 +319,6 @@
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-
   <!-- nothing to do here at the moment -->
   <!-- ROS base_link to UR 'Base' Coordinates transform -->
   <link name="base_r"/>
@@ -349,5 +344,4 @@
     <child link="base_link_r"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.3 0.0"/>
   </joint>
-
 </robot>

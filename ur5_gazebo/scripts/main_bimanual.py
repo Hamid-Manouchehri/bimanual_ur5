@@ -116,7 +116,7 @@ dqctrl_des_prev = np.zeros(singleArmDof)  # TODO: we usually start from rest
 CSVFileName_plot_data = config.bimanual_ur5_dic['CSVFileName']
 pathToCSVFile = config.bimanual_ur5_dic['CSVFileDirectory']
 
-upperBodyModelFileName = config.bimanual_ur5_dic['urdfModelName']
+upperBodyModelFileName = config.bimanual_ur5_dic['urdfModelName_r']
 pathToArmURDFModels = config.bimanual_ur5_dic['urdfDirectory']
 
 loaded_model = rbdl.loadModel(pathToArmURDFModels + upperBodyModelFileName)
@@ -608,7 +608,6 @@ def JointStatesCallback(data):
     jointTau = InverseDynamic(qCurrent_r, qDotCurrent_r, qDDotCurrent_r,
                               jointPoseDes, jointVelDes, jointAccelDes)
 
-    print(np.round(jointTau, 3))
     PubTorqueToGazebo(jointTau)
 
     time_ += dt

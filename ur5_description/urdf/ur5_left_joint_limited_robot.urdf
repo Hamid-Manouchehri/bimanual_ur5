@@ -38,7 +38,7 @@
   <!-- In CAD this distance is 0.930, but in the spec it is 0.09465 -->
   <!--property name="wrist_3_length" value="0.0823" /-->
   <!-- manually measured -->
-  <link name="base_link">
+  <link name="base_link_l">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/ur5/visual/base.dae"/>
@@ -58,15 +58,15 @@
       <inertia ixx="0.00443333156" ixy="0.0" ixz="0.0" iyy="0.00443333156" iyz="0.0" izz="0.0072"/>
     </inertial>
   </link>
-  <joint name="shoulder_pan_joint" type="revolute">
-    <parent link="base_link"/>
-    <child link="shoulder_link"/>
+  <joint name="shoulder_pan_joint_l" type="revolute">
+    <parent link="base_link_l"/>
+    <child link="shoulder_link_l"/>
     <origin rpy="0.0 0.0 3.14159265359" xyz="0.0 0.0 0.089159"/>
     <axis xyz="0 0 1"/>
     <limit effort="150.0" lower="-3.14159265359" upper="3.14159265359" velocity="3.15"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
-  <link name="shoulder_link">
+  <link name="shoulder_link_l">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/ur5/visual/shoulder.dae"/>
@@ -86,16 +86,16 @@
       <inertia ixx="0.010267495893" ixy="0.0" ixz="0.0" iyy="0.010267495893" iyz="0.0" izz="0.00666"/>
     </inertial>
   </link>
-  <joint name="shoulder_lift_joint" type="revolute">
-    <parent link="shoulder_link"/>
-    <child link="upper_arm_link"/>
+  <joint name="shoulder_lift_joint_l" type="revolute">
+    <parent link="shoulder_link_l"/>
+    <child link="upper_arm_link_l"/>
     <!-- <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.13585 0.0"/> -->
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.13585 0.0"/>
     <axis xyz="0 1 0"/>
     <limit effort="150.0" lower="-3.14159265359" upper="3.14159265359" velocity="3.15"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
-  <link name="upper_arm_link">
+  <link name="upper_arm_link_l">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/ur5/visual/upperarm.dae"/>
@@ -115,16 +115,16 @@
       <inertia ixx="0.22689067591" ixy="0.0" ixz="0.0" iyy="0.22689067591" iyz="0.0" izz="0.0151074"/>
     </inertial>
   </link>
-  <joint name="elbow_joint" type="revolute">
-    <parent link="upper_arm_link"/>
-    <child link="forearm_link"/>
+  <joint name="elbow_joint_l" type="revolute">
+    <parent link="upper_arm_link_l"/>
+    <child link="forearm_link_l"/>
     <!-- <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.1197 0.425"/> -->
     <origin rpy="0.0 -1.5708 0.0" xyz="0.0 -0.1197 0.425"/>
     <axis xyz="0 1 0"/>
     <limit effort="150.0" lower="-3.14159265359" upper="3.14159265359" velocity="3.15"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
-  <link name="forearm_link">
+  <link name="forearm_link_l">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/ur5/visual/forearm.dae"/>
@@ -144,16 +144,16 @@
       <inertia ixx="0.049443313556" ixy="0.0" ixz="0.0" iyy="0.049443313556" iyz="0.0" izz="0.004095"/>
     </inertial>
   </link>
-  <joint name="wrist_1_joint" type="revolute">
-    <parent link="forearm_link"/>
-    <child link="wrist_1_link"/>
+  <joint name="wrist_1_joint_l" type="revolute">
+    <parent link="forearm_link_l"/>
+    <child link="wrist_1_link_l"/>
     <!-- <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.39225"/> -->
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.0 0.39225"/>
     <axis xyz="0 1 0"/>
     <limit effort="28.0" lower="-3.14159265359" upper="3.14159265359" velocity="3.2"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
-  <link name="wrist_1_link">
+  <link name="wrist_1_link_l">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/ur5/visual/wrist1.dae"/>
@@ -173,15 +173,15 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_2_joint" type="revolute">
-    <parent link="wrist_1_link"/>
-    <child link="wrist_2_link"/>
+  <joint name="wrist_2_joint_l" type="revolute">
+    <parent link="wrist_1_link_l"/>
+    <child link="wrist_2_link_l"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.093 0.0"/>
     <axis xyz="0 0 1"/>
     <limit effort="28.0" lower="-3.14159265359" upper="3.14159265359" velocity="3.2"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
-  <link name="wrist_2_link">
+  <link name="wrist_2_link_l">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/ur5/visual/wrist2.dae"/>
@@ -201,15 +201,15 @@
       <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
-  <joint name="wrist_3_joint" type="revolute">
-    <parent link="wrist_2_link"/>
-    <child link="wrist_3_link"/>
+  <joint name="wrist_3_joint_l" type="revolute">
+    <parent link="wrist_2_link_l"/>
+    <child link="wrist_3_link_l"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.09465"/>
     <axis xyz="0 1 0"/>
     <limit effort="28.0" lower="-3.14159265359" upper="3.14159265359" velocity="3.2"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
-  <link name="wrist_3_link">
+  <link name="wrist_3_link_l">
     <visual>
       <geometry>
         <mesh filename="package://ur5_description/meshes/ur5/visual/wrist3.dae"/>
@@ -229,96 +229,96 @@
       <inertia ixx="0.0171364731454" ixy="0.0" ixz="0.0" iyy="0.0171364731454" iyz="0.0" izz="0.033822"/>
     </inertial>
   </link>
-  <joint name="ee_fixed_joint" type="fixed">
-    <parent link="wrist_3_link"/>
-    <child link="ee_link"/>
+  <!-- <joint name="ee_fixed_joint_l" type="fixed">
+    <parent link="wrist_3_link_l"/>
+    <child link="ee_link_l"/>
     <origin rpy="0.0 0.0 1.57079632679" xyz="0.0 0.0823 0.0"/>
   </joint>
-  <link name="ee_link">
+  <link name="ee_link_l">
     <collision>
       <geometry>
         <box size="0.01 0.01 0.01"/>
       </geometry>
       <origin rpy="0 0 0" xyz="-0.01 0 0"/>
     </collision>
-  </link>
-  <transmission name="shoulder_pan_trans">
+  </link> -->
+  <transmission name="shoulder_pan_trans_l">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="shoulder_pan_joint">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    <joint name="shoulder_pan_joint_l">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
-    <actuator name="shoulder_pan_motor">
+    <actuator name="shoulder_pan_motor_l">
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <transmission name="shoulder_lift_trans">
+  <transmission name="shoulder_lift_trans_l">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="shoulder_lift_joint">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    <joint name="shoulder_lift_joint_l">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
-    <actuator name="shoulder_lift_motor">
+    <actuator name="shoulder_lift_motor_l">
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <transmission name="elbow_trans">
+  <transmission name="elbow_trans_l">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="elbow_joint">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    <joint name="elbow_joint_l">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
-    <actuator name="elbow_motor">
+    <actuator name="elbow_motor_l">
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <transmission name="wrist_1_trans">
+  <transmission name="wrist_1_trans_l">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="wrist_1_joint">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    <joint name="wrist_1_joint_l">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
-    <actuator name="wrist_1_motor">
+    <actuator name="wrist_1_motor_l">
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <transmission name="wrist_2_trans">
+  <transmission name="wrist_2_trans_l">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="wrist_2_joint">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    <joint name="wrist_2_joint_l">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
-    <actuator name="wrist_2_motor">
+    <actuator name="wrist_2_motor_l">
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
-  <transmission name="wrist_3_trans">
+  <transmission name="wrist_3_trans_l">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="wrist_3_joint">
-      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    <joint name="wrist_3_joint_l">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
-    <actuator name="wrist_3_motor">
+    <actuator name="wrist_3_motor_l">
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
   </transmission>
   <!-- nothing to do here at the moment -->
   <!-- ROS base_link to UR 'Base' Coordinates transform -->
-  <link name="base"/>
-  <joint name="base_link-base_fixed_joint" type="fixed">
+  <link name="base_l"/>
+  <joint name="base_link_l-base_fixed_joint" type="fixed">
     <!-- NOTE: this rotation is only needed as long as base_link itself is
                  not corrected wrt the real robot (ie: rotated over 180
                  degrees)
       -->
     <origin rpy="0 0 -3.14159265359" xyz="0 0 0"/>
-    <parent link="base_link"/>
-    <child link="base"/>
+    <parent link="base_link_l"/>
+    <child link="base_l"/>
   </joint>
   <!-- Frame coincident with all-zeros TCP on UR controller -->
-  <link name="tool0"/>
-  <joint name="wrist_3_link-tool0_fixed_joint" type="fixed">
+  <link name="tool0_l"/>
+  <joint name="wrist_3_link_l-tool0_fixed_joint" type="fixed">
     <origin rpy="-1.57079632679 0 0" xyz="0 0.0823 0"/>
-    <parent link="wrist_3_link"/>
-    <child link="tool0"/>
+    <parent link="wrist_3_link_l"/>
+    <child link="tool0_l"/>
   </joint>
   <link name="world"/>
-  <joint name="world_joint" type="fixed">
+  <joint name="world_joint_l" type="fixed">
     <parent link="world"/>
-    <child link="base_link"/>
-    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+    <child link="base_link_l"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.3 0.0"/>
   </joint>
 </robot>
