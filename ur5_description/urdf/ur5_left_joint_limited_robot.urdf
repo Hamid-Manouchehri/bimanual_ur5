@@ -89,7 +89,6 @@
   <joint name="shoulder_lift_joint_l" type="revolute">
     <parent link="shoulder_link_l"/>
     <child link="upper_arm_link_l"/>
-    <!-- <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.13585 0.0"/> -->
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.13585 0.0"/>
     <axis xyz="0 1 0"/>
     <limit effort="150.0" lower="-3.14159265359" upper="3.14159265359" velocity="3.15"/>
@@ -118,7 +117,6 @@
   <joint name="elbow_joint_l" type="revolute">
     <parent link="upper_arm_link_l"/>
     <child link="forearm_link_l"/>
-    <!-- <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.1197 0.425"/> -->
     <origin rpy="0.0 -1.5708 0.0" xyz="0.0 -0.1197 0.425"/>
     <axis xyz="0 1 0"/>
     <limit effort="150.0" lower="-3.14159265359" upper="3.14159265359" velocity="3.15"/>
@@ -147,7 +145,6 @@
   <joint name="wrist_1_joint_l" type="revolute">
     <parent link="forearm_link_l"/>
     <child link="wrist_1_link_l"/>
-    <!-- <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.39225"/> -->
     <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.0 0.39225"/>
     <axis xyz="0 1 0"/>
     <limit effort="28.0" lower="-3.14159265359" upper="3.14159265359" velocity="3.2"/>
@@ -230,7 +227,7 @@
     </inertial>
   </link>
 
-  <!-- <joint name="box_R_fixed" type="fixed">
+  <!-- <joint name="wrist_3_to_obj_joint_r" type="fixed">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <parent link="wrist_3_link"/>
     <child link="obj"/>

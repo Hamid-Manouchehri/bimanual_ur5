@@ -51,7 +51,7 @@
   <xacro:property name="wrist_1_length" value="${ur5_d4 - elbow_offset - shoulder_offset}" />
   <xacro:property name="wrist_2_length" value="${ur5_d5}" />
   <xacro:property name="wrist_3_length" value="${ur5_d6}" />
-  <xacro:property name="obj_length" value="0.2" />
+  <xacro:property name="obj_length" value="0.2174" />
   <!--property name="shoulder_height" value="0.089159" /-->
   <!--property name="shoulder_offset" value="0.13585" /-->  <!-- shoulder_offset - elbow_offset + wrist_1_length = 0.10915 -->
   <!--property name="upper_arm_length" value="0.42500" /-->
@@ -299,33 +299,6 @@
       </xacro:cylinder_inertial>
     </link>
 
-    <!-- <joint name="box_R_fixed" type="fixed">
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <parent link="${prefix}wrist_3_link_r"/>
-        <child link="obj"/>
-    </joint>
-
-    <link name="obj">
-        <visual>
-            <origin rpy="0 0 0" xyz="0.0 ${obj_length/2 + wrist_3_length} 0.0"/>
-            <geometry>
-                <box size="0.05 ${obj_length} 0.05"/>
-            </geometry>
-            <material name="green"/>
-        </visual>
-        <collision>
-            <origin rpy="0 0 0" xyz="0.0 ${obj_length/2 + wrist_3_length} 0.0"/>
-            <geometry>
-                <box size="0.05 ${obj_length} 0.05"/>
-            </geometry>
-        </collision>
-        <inertial>
-            <origin rpy="0 0 0" xyz="0.0 ${obj_length/2 + wrist_3_length} 0.0"/>
-            <mass value="${obj_mass}"/>
-            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
-        </inertial>
-    </link> -->
-
     <joint name="${prefix}ee_fixed_joint_r" type="fixed">
       <parent link="${prefix}wrist_3_link_r" />
       <child link = "${prefix}ee_link_r" />
@@ -364,11 +337,6 @@
       <child link="${prefix}tool0_r"/>
     </joint>
 
-
-
-
-
-
     <link name="${prefix}base_link_l" >
       <visual>
         <geometry>
@@ -392,7 +360,6 @@
       <parent link="${prefix}base_link_l" />
       <child link = "${prefix}shoulder_link_l" />
       <origin xyz="0.0 0.0 ${shoulder_height}" rpy="0.0 0.0 ${pi}" />
-      <!-- <origin xyz="0.0 0.0 ${shoulder_height}" rpy="0.0 0.0 0.0" /> -->
       <axis xyz="0 0 1" />
       <xacro:unless value="${joint_limited}">
         <limit lower="${-2.0 * pi}" upper="${2.0 * pi}" effort="150.0" velocity="3.15"/>
@@ -459,7 +426,6 @@
       <parent link="${prefix}upper_arm_link_l" />
       <child link = "${prefix}forearm_link_l" />
       <origin xyz="0.0 ${elbow_offset} ${upper_arm_length}" rpy="0.0 ${-pi / 2.0} 0.0" />
-      <!-- <origin xyz="0.0 ${elbow_offset} ${upper_arm_length}" rpy="0.0 0.0 0.0" /> -->
       <axis xyz="0 1 0" />
       <xacro:unless value="${joint_limited}">
         <limit lower="${-pi}" upper="${pi}" effort="150.0" velocity="3.15"/>
@@ -493,7 +459,6 @@
       <parent link="${prefix}forearm_link_l" />
       <child link = "${prefix}wrist_1_link_l" />
       <origin xyz="0.0 0.0 ${forearm_length}" rpy="0.0 ${pi / 2.0} 0.0" />
-      <!-- <origin xyz="0.0 0.0 ${forearm_length}" rpy="0.0 0.0 0.0" /> -->
       <axis xyz="0 1 0" />
       <xacro:unless value="${joint_limited}">
         <limit lower="${-2.0 * pi}" upper="${2.0 * pi}" effort="28.0" velocity="3.2"/>
@@ -622,6 +587,51 @@
       <parent link="${prefix}wrist_3_link_l"/>
       <child link="${prefix}tool0_l"/>
     </joint>
+
+    <joint name="wrist_3_to_obj_joint_r" type="fixed">
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <parent link="${prefix}wrist_3_link_r"/>
+        <child link="obj"/>
+    </joint>
+
+    <link name="obj">
+        <visual>
+            <origin rpy="0 0 0" xyz="0.0 ${obj_length/2 + wrist_3_length} 0.0"/>
+            <geometry>
+                <box size="0.05 ${obj_length} 0.05"/>
+            </geometry>
+            <material name="LightGreen"/>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0.0 ${obj_length/2 + wrist_3_length} 0.0"/>
+            <geometry>
+                <box size="0.05 ${obj_length} 0.05"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <origin rpy="0 0 0" xyz="0.0 ${obj_length/2 + wrist_3_length} 0.0"/>
+            <mass value="${obj_mass}"/>
+            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+        </inertial>
+    </link>
+
+    <gazebo>
+        <joint name="wrist_3_to_obj_joint_l" type="fixed">
+            <parent>wrist_3_link_l</parent>
+            <child>obj</child>
+            <pose>-0.02 0 0 0 0 0</pose>
+            <physics>
+                <ode>
+                    <implicit_spring_damper>1</implicit_spring_damper>
+                    <cfm_damping>1</cfm_damping>
+                    <limit>
+                        <cfm>0</cfm>
+                        <erp>0.2</erp>
+                    </limit>
+                </ode>
+            </physics>
+        </joint>
+    </gazebo>
 
   </xacro:macro>
 </robot>

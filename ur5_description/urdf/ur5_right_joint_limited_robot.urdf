@@ -227,7 +227,7 @@
     </inertial>
   </link>
 
-  <!-- <joint name="box_R_fixed" type="fixed">
+  <!-- <joint name="wrist_3_to_obj_joint_r" type="fixed">
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <parent link="wrist_3_link_r"/>
     <child link="obj"/>
@@ -253,7 +253,7 @@
       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
     </inertial>
   </link> -->
-  
+
   <joint name="ee_fixed_joint_r" type="fixed">
     <parent link="wrist_3_link_r"/>
     <child link="ee_link_r"/>
