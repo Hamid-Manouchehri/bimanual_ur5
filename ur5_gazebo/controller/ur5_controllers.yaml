@@ -2,6 +2,7 @@ joint_states_controller:
       type: joint_state_controller/JointStateController
       publish_rate: 100
 
+
 shoulder_pan_controller_r:
   type: effort_controllers/JointEffortController
   joint: shoulder_pan_joint_r

@@ -16,19 +16,20 @@
       args="
       joint_states_controller
 
-      shoulder_pan_controller_r
-      shoulder_lift_controller_r
-      elbow_controller_r
-      wrist_1_controller_r
-      wrist_2_controller_r
-      wrist_3_controller_r
-      
       shoulder_pan_controller_l
       shoulder_lift_controller_l
       elbow_controller_l
       wrist_1_controller_l
       wrist_2_controller_l
       wrist_3_controller_l
+
+      shoulder_pan_controller_r
+      shoulder_lift_controller_r
+      elbow_controller_r
+      wrist_1_controller_r
+      wrist_2_controller_r
+      wrist_3_controller_r
+
       ">
   </node>
 

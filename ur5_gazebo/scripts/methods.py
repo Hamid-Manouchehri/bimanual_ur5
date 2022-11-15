@@ -16,8 +16,6 @@ import config
 plotLegend = ''
 yLabel = ''
 writeHeaderOnceFlag = True
-
-linkName = 'wrist_3_link_r'  # TODO
 workspaceDof = 6  # TODO
 
 CSVFileName_plot_data = config.bimanual_ur5_dic['CSVFileName']
@@ -48,14 +46,7 @@ def CalcH(model, q, qdot, qddot):
     return H
 
 
-def rotationMatrixToEulerAngles(RotationMat, euler_order) :
-
-    r = R.from_matrix(RotationMat)
-
-    return r.as_euler(euler_order)
-
-
-def GeneralizedPoseOfObj(model, q):
+def GeneralizedPoseOfObj(model, linkName, q):
 
     # objCOMinWrist3 = 0.1823
     objCOMinWrist3 = 0.
@@ -73,7 +64,7 @@ def GeneralizedPoseOfObj(model, q):
     return poseOfObj, rotationMatOfBox
 
 
-def Jacobian(model, q):
+def Jacobian(model, linkName, q):
 
     jc = np.zeros((workspaceDof, model.q_size))  # (6*6): due to whole 'model' and 'q' are imported.
 
@@ -91,7 +82,7 @@ def Jacobian(model, q):
     return jc
 
 
-def CalcGeneralizedVelOfObject(model, q, qdot):
+def CalcGeneralizedVelOfObject(model, linkName, q, qdot):
     """
     Calculate generalized velocity of the object via the right-hand ...
     kinematics in base frame.
@@ -113,7 +104,7 @@ def CalcGeneralizedVelOfObject(model, q, qdot):
 
 
 
-def CalcdJdq(model, q, qdot, qddot):
+def CalcdJdq(model, linkName, q, qdot, qddot):
     """Compute linear acceleration of a point on body."""
 
     # objCOMinWrist3 = 0.1823
