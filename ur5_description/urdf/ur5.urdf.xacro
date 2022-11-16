@@ -299,7 +299,7 @@
       </xacro:cylinder_inertial>
     </link>
 
-    <joint name="${prefix}ee_fixed_joint_r" type="fixed">
+    <!-- <joint name="${prefix}ee_fixed_joint_r" type="fixed">
       <parent link="${prefix}wrist_3_link_r" />
       <child link = "${prefix}ee_link_r" />
       <origin xyz="0.0 ${wrist_3_length} 0.0" rpy="0.0 0.0 ${pi/2.0}" />
@@ -312,7 +312,7 @@
         </geometry>
         <origin rpy="0 0 0" xyz="-0.01 0 0"/>
       </collision>
-    </link>
+    </link> -->
 
     <xacro:ur_arm_transmission prefix="${prefix}" />
     <xacro:ur_arm_gazebo prefix="${prefix}" />
@@ -554,7 +554,7 @@
       </xacro:cylinder_inertial>
     </link>
 
-    <joint name="${prefix}ee_fixed_joint_l" type="fixed">
+    <!-- <joint name="${prefix}ee_fixed_joint_l" type="fixed">
       <parent link="${prefix}wrist_3_link_l" />
       <child link = "${prefix}ee_link_l" />
       <origin xyz="0.0 ${wrist_3_length} 0.0" rpy="0.0 0.0 ${pi/2.0}" />
@@ -567,7 +567,7 @@
         </geometry>
         <origin rpy="0 0 0" xyz="-0.01 0 0"/>
       </collision>
-    </link>
+    </link> -->
 
     <xacro:ur_arm_transmission prefix="${prefix}" />
     <xacro:ur_arm_gazebo prefix="${prefix}" />
@@ -588,7 +588,7 @@
       <child link="${prefix}tool0_l"/>
     </joint>
 
-    <joint name="wrist_3_to_obj_joint_r" type="fixed">
+    <!-- <joint name="wrist_3_to_obj_joint_r" type="fixed">
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <parent link="${prefix}wrist_3_link_r"/>
         <child link="obj"/>
@@ -631,7 +631,7 @@
                 </ode>
             </physics>
         </joint>
-    </gazebo>
+    </gazebo> -->
 
   </xacro:macro>
 </robot>

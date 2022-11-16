@@ -33,7 +33,8 @@ t_end = 5
 g0 = 9.81
 writeHeaderOnceFlag = True
 finiteTimeSimFlag = True  # TODO: True: simulate to 't_end', Flase: Infinite time
-linkName = 'wrist_3_link_l'  # TODO
+linkName_r = 'wrist_3_link_r'
+linkName_l = 'wrist_3_link_l'
 
 workspaceDof = 6  # TODO
 singleArmDof = 6  # TODO
@@ -90,7 +91,7 @@ poseOfObjInWorld_z_l = .609
 
 orientationOfObj_roll_l = 0.
 orientationOfObj_pitch_l = 0.
-orientationOfObj_yaw_l = -np.pi
+orientationOfObj_yaw_l = np.pi
 
 
 ## Path attributes:
@@ -132,17 +133,29 @@ pathToArmURDFModels = config.bimanual_ur5_dic['urdfDirectory']
 loaded_model = rbdl.loadModel(pathToArmURDFModels + upperBodyModelFileName)
 
 ## create instances of publishers:
-pub_shoulder_pan = rospy.Publisher('/shoulder_pan_controller_l/command',
+pub_shoulder_pan_r = rospy.Publisher('/shoulder_pan_controller_r/command',
                    Float64, queue_size=10)
-pub_shoulder_lift = rospy.Publisher('/shoulder_lift_controller_l/command',
+pub_shoulder_lift_r = rospy.Publisher('/shoulder_lift_controller_r/command',
                     Float64, queue_size=10)
-pub_elbow = rospy.Publisher('/elbow_controller_l/command',
+pub_elbow_r = rospy.Publisher('/elbow_controller_r/command',
             Float64, queue_size=10)
-pub_wrist_1 = rospy.Publisher('/wrist_1_controller_l/command',
+pub_wrist_1_r = rospy.Publisher('/wrist_1_controller_r/command',
               Float64, queue_size=10)
-pub_wrist_2 = rospy.Publisher('/wrist_2_controller_l/command',
+pub_wrist_2_r = rospy.Publisher('/wrist_2_controller_r/command',
               Float64, queue_size=10)
-pub_wrist_3 = rospy.Publisher('/wrist_3_controller_l/command',
+pub_wrist_3_r = rospy.Publisher('/wrist_3_controller_r/command',
+              Float64, queue_size=10)
+pub_shoulder_pan_l = rospy.Publisher('/shoulder_pan_controller_l/command',
+                   Float64, queue_size=10)
+pub_shoulder_lift_l = rospy.Publisher('/shoulder_lift_controller_l/command',
+                    Float64, queue_size=10)
+pub_elbow_l = rospy.Publisher('/elbow_controller_l/command',
+            Float64, queue_size=10)
+pub_wrist_1_l = rospy.Publisher('/wrist_1_controller_l/command',
+              Float64, queue_size=10)
+pub_wrist_2_l = rospy.Publisher('/wrist_2_controller_l/command',
+              Float64, queue_size=10)
+pub_wrist_3_l = rospy.Publisher('/wrist_3_controller_l/command',
               Float64, queue_size=10)
 
 
@@ -221,16 +234,28 @@ def TrajPlan(t_start, t_end, z_start_o, z_end_o, traj_type='Quantic'):
             desiredGeneralizedAccel]
 
 
-def PubTorqueToGazebo(torqueVec):
+def PubTorqueToGazebo_r(torqueVec):
     """
     Publish torques to Gazebo (manipulate the object in a linear trajectory)
     """
-    pub_shoulder_pan.publish(torqueVec[0])
-    pub_shoulder_lift.publish(torqueVec[1])
-    pub_elbow.publish(torqueVec[2])
-    pub_wrist_1.publish(torqueVec[3])
-    pub_wrist_2.publish(torqueVec[4])
-    pub_wrist_3.publish(torqueVec[5])
+    pub_shoulder_pan_r.publish(torqueVec[0])
+    pub_shoulder_lift_r.publish(torqueVec[1])
+    pub_elbow_r.publish(torqueVec[2])
+    pub_wrist_1_r.publish(torqueVec[3])
+    pub_wrist_2_r.publish(torqueVec[4])
+    pub_wrist_3_r.publish(torqueVec[5])
+
+
+def PubTorqueToGazebo_l(torqueVec):
+    """
+    Publish torques to Gazebo (manipulate the object in a linear trajectory)
+    """
+    pub_shoulder_pan_l.publish(torqueVec[0])
+    pub_shoulder_lift_l.publish(torqueVec[1])
+    pub_elbow_l.publish(torqueVec[2])
+    pub_wrist_1_l.publish(torqueVec[3])
+    pub_wrist_2_l.publish(torqueVec[4])
+    pub_wrist_3_l.publish(torqueVec[5])
 
 
 def CalcOrientationErrorInQuaternion(orientationInQuatCurrent, orientationInQuatDes):
@@ -433,10 +458,10 @@ def RotMatToQuaternion(R):
 
 def Task2Joint(qCurrent, qDotCurrent, qDDotCurrent, poseDesTraj, velDesTraj, accelDesTraj):
 
-    jac = methods.Jacobian(loaded_model, linkName, qCurrent)
+    jac = methods.Jacobian(loaded_model, linkName_l, qCurrent)
 
     currentPoseOfObj, RotMat = methods.GeneralizedPoseOfObj(loaded_model,
-                                                            linkName, qCurrent)  # pose of 'wrist_3_link' frame in world/inertia frame
+                                                            linkName_l, qCurrent)  # pose of 'wrist_3_link' frame in world/inertia frame
     currentOrientationOfObjInQuat = RotMatToQuaternion(RotMat)  # [w, q0, q1, q2], equ(145), attitude
 
     desOrientationOfObjInQuat = EulerToUnitQuaternion_xyz(poseDesTraj[3:])  # equ(297), attitude, which order ?????????????????
@@ -453,7 +478,7 @@ def Task2Joint(qCurrent, qDotCurrent, qDDotCurrent, poseDesTraj, velDesTraj, acc
     xDot_ref = CalcGeneralizedVel_ref(currentPoseOfObj, poseDesTraj[:3], velDesTraj, e_o)  # equ(1), orientation planning
     # xDot_ref = CalcGeneralizedVel_ref(currentPoseOfObj, poseDesTraj[:3], velOfObjDes, e_o)  # equ(1), orientation planning
 
-    currentVelOfObj = methods.CalcGeneralizedVelOfObject(loaded_model, linkName,
+    currentVelOfObj = methods.CalcGeneralizedVelOfObject(loaded_model, linkName_l,
                                                          qCurrent, qDotCurrent)
 
     velError = xDot_ref - currentVelOfObj
@@ -463,7 +488,7 @@ def Task2Joint(qCurrent, qDotCurrent, qDDotCurrent, poseDesTraj, velDesTraj, acc
     accelDesTraj = accelDesTraj + kd_a * velError + kp_a * poseError
     # WriteToCSV(poseError[3:], 'angular pose error', ['phi', 'theta', 'psy'])
 
-    dJdq = methods.CalcdJdq(loaded_model, linkName, qCurrent, qDotCurrent,
+    dJdq = methods.CalcdJdq(loaded_model, linkName_l, qCurrent, qDotCurrent,
                             qDDotCurrent)
 
     qDDotDes = pinv(jac).dot(accelDesTraj - dJdq)  # equ(21)
@@ -637,15 +662,10 @@ def JointStatesCallback(data):
                                                           velTrajectoryDes,
                                                           accelTrajectoryDes)
 
-
-    # jointPoseDes = np.array([0., 0., 0., 0., 0., 0.])
-    # jointVelDes = np.array([0., 0., 0., 0., 0., 0.])
-    # jointAccelDes = np.array([0., 0., 0., 0., 0., 0.])
-
     jointTau = InverseDynamic(qCurrent_l, qDotCurrent_l, qDDotCurrent_l,
                               jointPoseDes, jointVelDes, jointAccelDes)
-    # print(np.round(jointTau, 3))
-    PubTorqueToGazebo(jointTau)
+
+    PubTorqueToGazebo_l(jointTau)
 
     time_ += dt
 

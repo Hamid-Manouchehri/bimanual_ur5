@@ -32,7 +32,7 @@ time_gaz = 0.
 t_end = 5
 g0 = 9.81
 writeHeaderOnceFlag = True
-finiteTimeSimFlag = True  # TODO: True: simulate to 't_end', Flase: Infinite time
+finiteTimeSimFlag = False  # TODO: True: simulate to 't_end', Flase: Infinite time
 linkName_r = 'wrist_3_link_r'
 
 workspaceDof = 6  # TODO
@@ -42,28 +42,28 @@ poseOfObj_pre = np.array([0, 0, 0, 0, 0, 0])
 
 k_p_pose = np.array([[1, 0, 0],
                      [0, 1, 0],
-                     [0, 0, 1]]) * 20
+                     [0, 0, 1]]) * 30
 
 k_o = np.array([[1, 0, 0],
                 [0, 1, 0],
-                [0, 0, 1]]) * 5
+                [0, 0, 1]]) * 15
 
 kp_a = 100
-kd_a = kp_a / 10
+kd_a = kp_a / 13
 
 kp = np.array([[1, 0, 0, 0, 0, 0],
                [0, 1, 0, 0, 0, 0],
                [0, 0, 1, 0, 0, 0],
                [0, 0, 0, 1, 0, 0],
                [0, 0, 0, 0, 1, 0],
-               [0, 0, 0, 0, 0, 1]]) * 60
+               [0, 0, 0, 0, 0, 1]]) * 180
 
 kd = np.array([[1, 0, 0, 0, 0, 0],
                [0, 1, 0, 0, 0, 0],
                [0, 0, 1, 0, 0, 0],
                [0, 0, 0, 1, 0, 0],
                [0, 0, 0, 0, 1, 0],
-               [0, 0, 0, 0, 0, 1]]) * 25
+               [0, 0, 0, 0, 0, 1]]) * 15
 
 
 """
@@ -87,7 +87,7 @@ orientationOfObj_yaw_r = 0.
 ## Path attributes:
 numOfTraj = 2
 
-desiredInitialStateOfObj_traj_1 = np.array([poseOfObjInWorld_x_r, poseOfObjInWorld_y_r, poseOfObjInWorld_z_r,
+desiredInitialStateOfObj_traj_1 = np.array([poseOfObjInWorld_x_r, poseOfObjInWorld_y_r + .2, poseOfObjInWorld_z_r,
                                             orientationOfObj_roll_r, orientationOfObj_pitch_r, orientationOfObj_yaw_r])
 
 desiredFinalStateOfObj_traj_1 = np.array([poseOfObjInWorld_x_r, poseOfObjInWorld_y_r, poseOfObjInWorld_z_r,
@@ -120,7 +120,7 @@ pathToCSVFile = config.bimanual_ur5_dic['CSVFileDirectory']
 upperBodyModelFileName = config.bimanual_ur5_dic['urdfModelName_r']  # TODO
 pathToArmURDFModels = config.bimanual_ur5_dic['urdfDirectory']
 
-loaded_model = rbdl.loadModel(pathToArmURDFModels + upperBodyModelFileName)
+loaded_model_r = rbdl.loadModel(pathToArmURDFModels + upperBodyModelFileName)
 
 ## create instances of publishers:
 pub_shoulder_pan_r = rospy.Publisher('/shoulder_pan_controller_r/command',
@@ -344,11 +344,31 @@ def EulerToUnitQuaternion_xyz(eulerAngles):
     psy = eulerAngles[2]
 
     w = np.cos(phi/2)*np.cos(theta/2)*np.cos(psy/2) + np.sin(phi/2)*np.sin(theta/2)*np.sin(psy/2)
-    v1 = -np.cos(phi/2)*np.sin(theta/2)*np.sin(psy/2) + np.cos(theta/2)*np.cos(psy/2)*np.sin(phi/2)
-    v2 = np.cos(phi/2)*np.cos(psy/2)*np.sin(theta/2) + np.sin(phi/2)*np.cos(theta/2)*np.sin(psy/2)
-    v3 = np.cos(phi/2)*np.cos(theta/2)*np.sin(psy/2) - np.sin(phi/2)*np.cos(psy/2)*np.sin(theta/2)
+    q0 = -np.cos(phi/2)*np.sin(theta/2)*np.sin(psy/2) + np.cos(theta/2)*np.cos(psy/2)*np.sin(phi/2)
+    q1 = np.cos(phi/2)*np.cos(psy/2)*np.sin(theta/2) + np.sin(phi/2)*np.cos(theta/2)*np.sin(psy/2)
+    q2 = np.cos(phi/2)*np.cos(theta/2)*np.sin(psy/2) - np.sin(phi/2)*np.cos(psy/2)*np.sin(theta/2)
 
-    return np.array([w, v1, v2, v3])
+    q = np.array([w, q0, q1, q2])
+
+    # r11 = np.cos(theta)*np.cos(psy)
+    # r12 = np.sin(phi)*np.sin(theta)*np.cos(psy) - np.cos(phi)*np.sin(psy)
+    # r13 = np.cos(phi)*np.sin(theta)*np.cos(psy) + np.sin(phi)*np.sin(psy)
+    #
+    # r21 = np.cos(theta)*np.sin(psy)
+    # r22 = np.sin(phi)*np.sin(theta)*np.sin(psy) + np.cos(phi)*np.cos(psy)
+    # r23 = np.cos(phi)*np.sin(theta)*np.sin(psy) - np.sin(phi)*np.cos(psy)
+    #
+    # r31 = -np.sin(theta)
+    # r32 = np.cos(theta)*np.sin(phi)
+    # r33 = np.cos(theta)*np.cos(phi)
+    #
+    # R123 = np.array([[r11, r12, r13],
+    #                  [r21, r22, r23],
+    #                  [r31, r32, r33]])
+    #
+    # q = RotMatToQuaternion(R123.T)
+
+    return q
 
 
 def CalcGeneralizedVel_ref(currentPose, desPose, desVel, e_o):
@@ -368,8 +388,8 @@ def CalcGeneralizedVel_ref(currentPose, desPose, desVel, e_o):
 
 def InverseDynamic(qCurrent, qDotCurrent, qDDotCurrent, qDes, qDotDes, qDDotDes):
 
-    M = methods.CalcM(loaded_model, qCurrent)
-    h = methods.CalcH(loaded_model, qCurrent, qDotCurrent, qDDotCurrent)
+    M = methods.CalcM(loaded_model_r, qCurrent)
+    h = methods.CalcH(loaded_model_r, qCurrent, qDotCurrent, qDDotCurrent)
 
     ## Inverse Dynamics controller:
     errorPose = qDes - qCurrent
@@ -436,38 +456,36 @@ def RotMatToQuaternion(R):
 
 def Task2Joint(qCurrent, qDotCurrent, qDDotCurrent, poseDesTraj, velDesTraj, accelDesTraj):
 
-    jac = methods.Jacobian(loaded_model, linkName_r, qCurrent)
+    jac = methods.Jacobian(loaded_model_r, linkName_r, qCurrent)
 
-    currentPoseOfObj, RotMat = methods.GeneralizedPoseOfObj(loaded_model,
-                                                            linkName_r, qCurrent)  # pose of 'wrist_3_link' frame in world/inertia frame
+    currentPoseOfObj, RotMat = methods.GeneralizedPoseOfObj(loaded_model_r, linkName_r, qCurrent)  # pose of 'wrist_3_link' frame in world/inertia frame
     currentOrientationOfObjInQuat = RotMatToQuaternion(RotMat)  # [w, q0, q1, q2], equ(145), attitude
 
     desOrientationOfObjInQuat = EulerToUnitQuaternion_xyz(poseDesTraj[3:])  # equ(297), attitude, which order ?????????????????
 
     translationalError = poseDesTraj[:3] - currentPoseOfObj
-    e_o = CalcOrientationErrorInQuaternion(currentOrientationOfObjInQuat,
-                                           desOrientationOfObjInQuat)  # equ(4), orientation planning
+    e_o = CalcOrientationErrorInQuaternion(currentOrientationOfObjInQuat, desOrientationOfObjInQuat)  # equ(4), orientation planning
     poseError = np.concatenate((translationalError, e_o))
-
-    velOfObjDes = CalcEulerGeneralizedVel(poseDesTraj, velDesTraj)  # ??????????????????
-    accelOfObjDes = CalcEulerGeneralizedAccel(poseDesTraj, velDesTraj,
-                                              accelDesTraj)  # ??????????????????
+    # WriteToCSV(poseError, 'pose error', ['p_x', 'p_y', 'p_z', 'p_r', 'p_p', 'p_ya'])
 
     xDot_ref = CalcGeneralizedVel_ref(currentPoseOfObj, poseDesTraj[:3], velDesTraj, e_o)  # equ(1), orientation planning
-    # xDot_ref = CalcGeneralizedVel_ref(currentPoseOfObj, poseDesTraj[:3], velOfObjDes, e_o)  # equ(1), orientation planning
 
-    currentVelOfObj = methods.CalcGeneralizedVelOfObject(loaded_model, linkName_r,
-                                                         qCurrent, qDotCurrent)
+    currentVelOfObj = methods.CalcGeneralizedVelOfObject(loaded_model_r,
+                                                         linkName_r,
+                                                         qCurrent,
+                                                         qDotCurrent)
+
+    velOfObjDes = CalcEulerGeneralizedVel(poseDesTraj, velDesTraj)
+    accelOfObjDes = CalcEulerGeneralizedAccel(poseDesTraj, velDesTraj, accelDesTraj)
 
     velError = xDot_ref - currentVelOfObj
 
-
-    # accelDesTraj = accelOfObjDes + kd_a * velError + kp_a * poseError  # or below ????????
+    # accelDesTraj = accelOfObjDes + kd_a * xDot_ref + kp_a * e_o # or the below ??????????
+    # accelDesTraj = accelOfObjDes + kd_a * (xDot_ref - currentVelOfObj) + kp_a * e_o  # or below ????????
     accelDesTraj = accelDesTraj + kd_a * velError + kp_a * poseError
-    # WriteToCSV(poseError[3:], 'angular pose error', ['phi', 'theta', 'psy'])
 
-    dJdq = methods.CalcdJdq(loaded_model, linkName_r, qCurrent, qDotCurrent,
-                            qDDotCurrent)
+
+    dJdq = methods.CalcdJdq(loaded_model_r, linkName_r, qCurrent, qDotCurrent, qDDotCurrent)
 
     qDDotDes = pinv(jac).dot(accelDesTraj - dJdq)  # equ(21)
 
@@ -501,63 +519,35 @@ def TrajectoryGeneration(t):
 
     radius = .2
 
-    # ## desired trajectory (position):
-    # xDes = poseOfObjInWorld_x_r
-    # yDes = radius*np.sin(t) + .4
-    # zDes = radius*np.cos(t) + .4
-    # phiDes = 0.
-    # thetaDes = 0.
-    # psyDes = 0.
-    # poseTrajectoryDes = np.array([xDes, yDes, zDes, phiDes, thetaDes, psyDes])
-    #
-    # ## desired trajectory (velocity):
-    # xDotDes = 0.
-    # yDotDes = radius*np.cos(t)
-    # zDotDes = -radius*np.sin(t)
-    # phiDotDes = 0.
-    # thetaDotDes = 0.
-    # psyDotDes = 0.
-    # velTrajectoryDes = np.array([xDotDes, yDotDes, zDotDes,
-    #                              phiDotDes, thetaDotDes, psyDotDes])
-    #
-    # ## desired trajectory (acceleration):
-    # xDDotDes = 0.
-    # yDDotDes = -radius*np.sin(t)
-    # zDDotDes = -radius*np.cos(t)
-    # phiDDotDes = 0.
-    # thetaDDotDes = 0.
-    # psyDDotDes = 0.
-    # accelTrajectoryDes = np.array([xDDotDes, yDDotDes, zDDotDes,
-    #                                phiDDotDes, thetaDDotDes, psyDDotDes])
-
     ## desired trajectory (position):
     xDes = poseOfObjInWorld_x_r
-    yDes = poseOfObjInWorld_y_r
-    zDes = poseOfObjInWorld_z_r
-    phiDes = 0.
-    thetaDes = 0.
-    psyDes = t
+    yDes = radius*np.sin(t) + poseOfObjInWorld_y_r
+    zDes = radius*np.cos(t) + poseOfObjInWorld_z_r
+    phiDes = orientationOfObj_roll_r
+    thetaDes = orientationOfObj_pitch_r
+    psyDes = orientationOfObj_yaw_r
     poseTrajectoryDes = np.array([xDes, yDes, zDes, phiDes, thetaDes, psyDes])
 
     ## desired trajectory (velocity):
     xDotDes = 0.
-    yDotDes = 0.
-    zDotDes = 0.
+    yDotDes = radius*np.cos(t)
+    zDotDes = -radius*np.sin(t)
     phiDotDes = 0.
     thetaDotDes = 0.
-    psyDotDes = 1
+    psyDotDes = 0.
     velTrajectoryDes = np.array([xDotDes, yDotDes, zDotDes,
                                  phiDotDes, thetaDotDes, psyDotDes])
 
     ## desired trajectory (acceleration):
     xDDotDes = 0.
-    yDDotDes = 0.
-    zDDotDes = 0.
+    yDDotDes = -radius*np.sin(t)
+    zDDotDes = -radius*np.cos(t)
     phiDDotDes = 0.
     thetaDDotDes = 0.
     psyDDotDes = 0.
     accelTrajectoryDes = np.array([xDDotDes, yDDotDes, zDDotDes,
                                    phiDDotDes, thetaDDotDes, psyDDotDes])
+
 
     return poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes
 
@@ -569,9 +559,9 @@ def JointStatesCallback(data):
     global time_, qDotCurrent_pre, poseOfObj_pre, dt, time_gaz, time_gaz_pre
 
     ## Terminate the node after 't_end' seconds of simulation:
-    # if time_ >= t_end and finiteTimeSimFlag:
-    #     print("\n\nshut down 'main_node'.\n\n")
-    #     rospy.signal_shutdown('node terminated')
+    if time_ >= t_end and finiteTimeSimFlag:
+        print("\n\nshut down 'main_node'.\n\n")
+        rospy.signal_shutdown('node terminated')
 
     q = data.position  # class tuple, in radians
     qDot = data.velocity  # in rad/s
@@ -602,16 +592,16 @@ def JointStatesCallback(data):
     dt = time_gaz - time_gaz_pre + .001
     time_gaz_pre = time_gaz
 
-    qDDotCurrent_r = (qDotCurrent_r - qDotCurrent_pre) / dt
-    qDotCurrent_pre = qDotCurrent_r
+    # qDDotCurrent_r = (qDotCurrent_r - qDotCurrent_pre) / dt
+    # qDotCurrent_pre = qDotCurrent_r
 
     xDes_t, xDotDes_t, xDDotDes_t, timePrime = ChooseRef(time_gaz)
 
     ## end-effector desired states in Cartesian-space:
-    poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
-                    CalcDesiredTraj(xDes_t, xDotDes_t, xDDotDes_t, timePrime)
     # poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
-    #                                             TrajectoryGeneration(time_gaz)
+    #                 CalcDesiredTraj(xDes_t, xDotDes_t, xDDotDes_t, timePrime)
+    poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
+                                                TrajectoryGeneration(time_gaz)
 
     ## detemine desired states of robot in joint-space: (qDDot_desired, ...)
     jointPoseDes, jointVelDes, jointAccelDes = Task2Joint(qCurrent_r,

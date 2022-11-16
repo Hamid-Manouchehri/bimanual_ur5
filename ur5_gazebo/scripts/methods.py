@@ -17,6 +17,9 @@ plotLegend = ''
 yLabel = ''
 writeHeaderOnceFlag = True
 workspaceDof = 6  # TODO
+# objCOMinWrist3 = 0.1823
+objCOMinWrist3 = 0.  # TODO
+poseOfObjInHandFrame = np.array([0., objCOMinWrist3, 0.])
 
 CSVFileName_plot_data = config.bimanual_ur5_dic['CSVFileName']
 pathToCSVFile = config.bimanual_ur5_dic['CSVFileDirectory']
@@ -48,10 +51,6 @@ def CalcH(model, q, qdot, qddot):
 
 def GeneralizedPoseOfObj(model, linkName, q):
 
-    # objCOMinWrist3 = 0.1823
-    objCOMinWrist3 = 0.
-    poseOfObjInHandFrame = np.asarray([0., objCOMinWrist3, 0.])
-
     ## link names: [base_link, shoulder_link, upper_arm_link, forearm_link,
     ## wrist_1_link, wrist_2_link, wrist_3_link]
     poseOfObj = rbdl.CalcBodyToBaseCoordinates(model, q,
@@ -68,10 +67,6 @@ def Jacobian(model, linkName, q):
 
     jc = np.zeros((workspaceDof, model.q_size))  # (6*6): due to whole 'model' and 'q' are imported.
 
-    # objCOMinWrist3 = 0.1823
-    objCOMinWrist3 = 0.
-    poseOfObjInHandFrame = np.asarray([0., objCOMinWrist3, 0.])
-
     rbdl.CalcPointJacobian6D(model, q, model.GetBodyId(linkName),
                              poseOfObjInHandFrame, jc)  # (6*6)
 
@@ -87,10 +82,6 @@ def CalcGeneralizedVelOfObject(model, linkName, q, qdot):
     Calculate generalized velocity of the object via the right-hand ...
     kinematics in base frame.
     """
-    # objCOMinWrist3 = 0.1823
-    objCOMinWrist3 = 0.
-    poseOfObjInHandFrame = np.asarray([0., objCOMinWrist3, 0.])
-
     generalizedVelOfObj = rbdl.CalcPointVelocity6D(model, q, qdot,
                                                    model.GetBodyId(linkName),
                                                    poseOfObjInHandFrame)
@@ -106,10 +97,6 @@ def CalcGeneralizedVelOfObject(model, linkName, q, qdot):
 
 def CalcdJdq(model, linkName, q, qdot, qddot):
     """Compute linear acceleration of a point on body."""
-
-    # objCOMinWrist3 = 0.1823
-    objCOMinWrist3 = 0.
-    poseOfObjInHandFrame = np.asarray([0., objCOMinWrist3, 0.])
     qddot = np.zeros(6)
 
     bodyAccel = rbdl.CalcPointAcceleration6D(model, q, qdot, qddot,
