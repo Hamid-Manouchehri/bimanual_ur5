@@ -226,7 +226,32 @@
       <inertia ixx="0.0171364731454" ixy="0.0" ixz="0.0" iyy="0.0171364731454" iyz="0.0" izz="0.033822"/>
     </inertial>
   </link>
-  <!-- <joint name="ee_fixed_joint_r" type="fixed">
+  <joint name="wrist_3_to_obj_joint_r" type="fixed">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <parent link="wrist_3_link_r"/>
+      <child link="obj"/>
+  </joint>
+  <link name="obj">
+      <visual>
+          <origin rpy="0 0 0" xyz="0.0 .191 0.0"/>
+          <geometry>
+              <box size="0.05 .2174 0.05"/>
+          </geometry>
+          <material name="LightGreen"/>
+      </visual>
+      <collision>
+          <origin rpy="0 0 0" xyz="0.0 .191 0.0"/>
+          <geometry>
+              <box size="0.05 .2174 0.05"/>
+          </geometry>
+      </collision>
+      <inertial>
+          <origin rpy="0 0 0" xyz="0.0 .191 0.0"/>
+          <mass value=".5"/>
+          <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+      </inertial>
+  </link>
+  <joint name="ee_fixed_joint_r" type="fixed">
     <parent link="wrist_3_link_r"/>
     <child link="ee_link_r"/>
     <origin rpy="0.0 0.0 1.57079632679" xyz="0.0 0.0823 0.0"/>
@@ -238,7 +263,7 @@
       </geometry>
       <origin rpy="0 0 0" xyz="-0.01 0 0"/>
     </collision>
-  </link> -->
+  </link>
   <transmission name="shoulder_pan_trans_r">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="shoulder_pan_joint_r">
