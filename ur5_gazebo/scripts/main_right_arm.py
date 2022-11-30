@@ -39,8 +39,8 @@ linkName_r = 'wrist_3_link_r'
 
 wrist_3_length = 0.0823  # based on 'ur5.urdf.xacro'
 obj_length = .2174  # based on 'ur5.urdf.xacro'
-objCOMinWrist3_r = obj_length / 2 + wrist_3_length
-# objCOMinWrist3_r = 0
+# objCOMinWrist3_r = obj_length / 2 + wrist_3_length  # TODO: uncomment as object is added.
+objCOMinWrist3_r = 0  # TODO: uncomment as object is removed.
 poseOfObjCOMInWrist3Frame_r = np.array([0., objCOMinWrist3_r, 0.])  # (x, y, z)
 
 workspaceDof = 6
@@ -62,11 +62,11 @@ k_o = np.array([[1, 0, 0],
                 [0, 1, 0],
                 [0, 0, 1]]) * 20
 
-kp_a_lin = 50
+kp_a_lin = 100
 kd_a_lin = kp_a_lin / 5
 
-kp_a_ang = 50
-kd_a_ang = kp_a_ang / 15
+kp_a_ang = 100
+kd_a_ang = kp_a_ang / 10
 
 
 initialPoseOfObjInWorld_x_r = 0.3922
@@ -88,8 +88,8 @@ upperBodyModelFileName = config.bimanual_ur5_dic['urdfModelName_r']
 loaded_model_r = rbdl.loadModel(pathToArmURDFModels + upperBodyModelFileName)
 
 pathToTrajData = config.bimanual_ur5_dic['trajDataFileDirectory']
-trajDataFileName = config.bimanual_ur5_dic['trajDataFileName']
-trajDataFile = pathToTrajData + trajDataFileName
+trajDataFileName_r = config.bimanual_ur5_dic['trajDataFileName_r']
+trajDataFile = pathToTrajData + trajDataFileName_r
 
 
 ## create instances of publishers:
@@ -283,7 +283,7 @@ def Task2Joint(qCurrent_r, qDotCurrent_r, qDDotCurrent_r, poseDesTraj, velDesTra
     # e_o = CalcOrientationErrorInQuaternion(currentOrientationOfObjInQuat, desOrientationOfObjInQuat)  # for circular trajectory
 
     e_o = CalcOrientationErrorInQuaternion(currentOrientationOfObjInQuat, poseDesTraj[3:])  # equ(4), orientation planning, traj6d
-    WriteToCSV(e_o, 'pose Error_angular', ['e_r', 'e_p', 'e_y'])
+    # WriteToCSV(e_o, 'pose Error_angular', ['e_r', 'e_p', 'e_y'])
 
     # xDot_ref = CalcGeneralizedVel_ref(currentPoseOfObj, poseDesTraj[:3], velDesTraj, e_o)  # equ(1), orientation planning
     Pdot_ref, omega_ref = CalcGeneralizedVel_ref(currentPoseOfObj, poseDesTraj[:3], velDesTraj, e_o)  # equ(1), orientation planning
@@ -329,15 +329,13 @@ def IterateThroughTraj6dData(gaz_time):
     return poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes
 
 
-def TrajectoryGeneration(t):
+def TrajectoryGeneration(r, t):
     """Circular trajectory of the defined 'radius':"""
-
-    radius = .2
 
     ## desired trajectory (position):
     xDes = initialPoseOfObjInWorld_x_r
-    yDes = initialPoseOfObjInWorld_y_r
-    zDes = initialPoseOfObjInWorld_z_r
+    yDes = initialPoseOfObjInWorld_y_r + r*np.cos(t)
+    zDes = initialPoseOfObjInWorld_z_r + r*np.sin(t)
     phiDes = initialOrientationOfObj_roll_r
     thetaDes = initialOrientationOfObj_pitch_r
     psyDes = initialOrientationOfObj_yaw_r
@@ -345,8 +343,8 @@ def TrajectoryGeneration(t):
 
     ## desired trajectory (velocity):
     xDotDes = 0.
-    yDotDes = 0
-    zDotDes = 0
+    yDotDes = -r*np.sin(t)
+    zDotDes = r*np.cos(t)
     phiDotDes = 0.
     thetaDotDes = 0.
     psyDotDes = 0.
@@ -355,8 +353,8 @@ def TrajectoryGeneration(t):
 
     ## desired trajectory (acceleration):
     xDDotDes = 0.
-    yDDotDes = 0
-    zDDotDes = 0
+    yDDotDes = -r*np.cos(t)
+    zDDotDes = -r*np.sin(t)
     phiDDotDes = 0.
     thetaDDotDes = 0.
     psyDDotDes = 0.
@@ -405,13 +403,13 @@ def JointStatesCallback(data):
     dt = time_gaz - time_gaz_pre + .001
     time_gaz_pre = time_gaz
 
-    qDDotCurrent_r = (qDotCurrent_r - qDotCurrent_pre_r) / dt
-    qDotCurrent_pre_r = qDotCurrent_r
+    # qDDotCurrent_r = (qDotCurrent_r - qDotCurrent_pre_r) / dt
+    # qDotCurrent_pre_r = qDotCurrent_r
 
     poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
                                               IterateThroughTraj6dData(time_gaz)
     # poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
-    #                                             TrajectoryGeneration(time_gaz)
+    #                                             TrajectoryGeneration(.2, time_gaz)
 
     ## detemine desired states of robot in joint-space: (qDDot_desired, ...)
     jointPoseDes, jointVelDes, jointAccelDes = Task2Joint(qCurrent_r,

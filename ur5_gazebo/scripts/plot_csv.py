@@ -19,8 +19,8 @@ import config
 titleOfPlot = "< centrifugal, coriolis, gravity forces >"  # TODO
 titleOfXaxis = "time (s)"  # TODO
 
-CSVFileName_livePlot_data = config.plot_csv_dic['CSVFileName']  # TODO: Change 'plot_csv_dic' to whatever is defined in 'config.py'
-pathToCSVFile = config.plot_csv_dic['CSVFileDirectory']  # TODO: Change 'plot_csv_dic' to whatever is defined in 'config.py'
+CSVFileName_livePlot_data = config.bimanual_ur5_dic['CSVFileName']  # TODO: Change 'plot_csv_dic' to whatever is defined in 'config.py'
+pathToCSVFile = config.bimanual_ur5_dic['CSVFileDirectory']  # TODO: Change 'plot_csv_dic' to whatever is defined in 'config.py'
 
 
 def ReadCSV():
@@ -67,6 +67,7 @@ def main():
 
     else:
         print('There is no CSV source file in the defined directory!')
+        print('Hint: You have may not called "WriteToCSV" method within the code!')
 
 
 

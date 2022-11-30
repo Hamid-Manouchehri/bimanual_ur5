@@ -59,11 +59,11 @@ k_o = np.array([[1, 0, 0],
                 [0, 1, 0],
                 [0, 0, 1]]) * 20
 
-kp_a_lin = 50
+kp_a_lin = 100
 kd_a_lin = kp_a_lin / 5
 
-kp_a_ang = 50
-kd_a_ang = kp_a_ang / 15
+kp_a_ang = 100
+kd_a_ang = kp_a_ang / 10
 
 
 initialPoseOfObjInWorld_x_l = 0.3922
@@ -84,8 +84,8 @@ upperBodyModelFileName = config.bimanual_ur5_dic['urdfModelName_l']
 loaded_model_l = rbdl.loadModel(pathToArmURDFModels + upperBodyModelFileName)
 
 pathToTrajData = config.bimanual_ur5_dic['trajDataFileDirectory']
-trajDataFileName = config.bimanual_ur5_dic['trajDataFileName']
-trajDataFile = pathToTrajData + trajDataFileName
+trajDataFileName_l = config.bimanual_ur5_dic['trajDataFileName_l']
+trajDataFile = pathToTrajData + trajDataFileName_l
 
 
 ## create instances of publishers:
@@ -325,10 +325,8 @@ def IterateThroughTraj6dData(gaz_time):
     return poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes
 
 
-def TrajectoryGeneration(t):
+def TrajectoryGeneration(r, t):
     """Circular trajectory of the defined 'radius':"""
-
-    radius = .2
 
     ## desired trajectory (position):
     xDes = initialPoseOfObjInWorld_x_l
@@ -401,13 +399,13 @@ def JointStatesCallback(data):
     dt = time_gaz - time_gaz_pre + .001
     time_gaz_pre = time_gaz
 
-    qDDotCurrent_l = (qDotCurrent_l - qDotCurrent_pre_l) / dt
-    qDotCurrent_pre_l = qDotCurrent_l
+    # qDDotCurrent_l = (qDotCurrent_l - qDotCurrent_pre_l) / dt
+    # qDotCurrent_pre_l = qDotCurrent_l
 
     poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
                                               IterateThroughTraj6dData(time_gaz)
     # poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
-    #                                             TrajectoryGeneration(time_gaz)
+    #                                             TrajectoryGeneration(.2, time_gaz)
 
     ## detemine desired states of robot in joint-space: (qDDot_desired, ...)
     jointPoseDes, jointVelDes, jointAccelDes = Task2Joint(qCurrent_l,
