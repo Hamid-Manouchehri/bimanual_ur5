@@ -585,7 +585,7 @@
       <child link="${prefix}tool0_l"/>
     </joint>
 
-    <!-- <joint name="wrist_3_to_obj_joint_r" type="fixed">
+    <joint name="wrist_3_to_obj_joint_r" type="fixed">
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <parent link="${prefix}wrist_3_link_r"/>
         <child link="obj"/>
@@ -616,7 +616,7 @@
         <joint name="wrist_3_to_obj_joint_l" type="fixed">
             <parent>wrist_3_link_l</parent>
             <child>obj</child>
-            <pose>-0.02 0 0 0 0 0</pose>
+            <pose>0 ${obj_length + wrist_3_length} 0 0 0 0</pose>
             <physics>
                 <ode>
                     <implicit_spring_damper>1</implicit_spring_damper>
@@ -628,7 +628,7 @@
                 </ode>
             </physics>
         </joint>
-    </gazebo> -->
+    </gazebo>
 
   </xacro:macro>
 </robot>

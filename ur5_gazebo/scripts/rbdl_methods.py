@@ -79,7 +79,7 @@ def CalcGeneralizedVelOfObject(model, q, qdot, linkName, pointLocal):
     velOfObj_angular = generalizedVelOfObj[:3]
     velOfObj_linear = generalizedVelOfObj[3:6]
 
-    generalizedVelOfObj = np.hstack((velOfObj_linear, velOfObj_angular))
+    generalizedVelOfObj = np.concatenate((velOfObj_linear, velOfObj_angular))
 
     return generalizedVelOfObj
 

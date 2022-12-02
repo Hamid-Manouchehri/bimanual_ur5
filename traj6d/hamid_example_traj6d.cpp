@@ -5,24 +5,6 @@
 #include "traj6d.cpp"
 
 
-std::vector<double> ZYX_Euler_to_Quaternion(float phi, float theta, float psy){
-
-  float w, q1, q2, q3;
-  std::vector<double> output;
-
-  w = cos(phi/2)*cos(theta/2)*cos(psy/2) + sin(phi/2)*sin(theta/2)*sin(psy/2);
-  q1 = -cos(phi/2)*sin(theta/2)*sin(psy/2) + cos(theta/2)*cos(psy/2)*sin(phi/2);
-  q2 = cos(phi/2)*cos(psy/2)*sin(theta/2) + sin(phi/2)*cos(theta/2)*sin(psy/2);
-  q3 = cos(phi/2)*cos(theta/2)*sin(psy/2) - sin(phi/2)*cos(psy/2)*sin(theta/2);
-
-  output.push_back(w);
-  output.push_back(q1);
-  output.push_back(q2);
-  output.push_back(q3);
-
-  return output;
-}
-
 int main(){
 
   traj_gen::quintic_traj traj;
@@ -36,9 +18,9 @@ int main(){
   std::vector<double> t_via, eulerToQuat0, eulerToQuatf, eulerToQuat1, eulerToQuat2;
   std::vector<Eigen::Quaterniond> quat_via;
 
-  std::string dataFileName = "trajectory_data_right.txt";  // TODO: uncomment for 'main_right_arm.py'.
+  // std::string dataFileName = "trajectory_data_right.txt";  // TODO: uncomment for 'main_right_arm.py'.
   // std::string dataFileName = "trajectory_data_left.txt";  // TODO: uncomment for 'main_left_arm.py'.
-  // std::string dataFileName = "trajectory_data_bimanual.txt";  // TODO: uncomment for 'main_bimanual.py'.
+  std::string dataFileName = "trajectory_data_bimanual.txt";  // TODO: uncomment for 'main_bimanual.py'.
 
   dt = 0.001;
 
@@ -46,9 +28,9 @@ int main(){
 
 
   t0 = 0;
-  t1 = 1.5;  // TODO: via time for 'quat1'
-  t2 = 3;  // TODO: via time for 'quat2'
-  t_end = 4.5;  // TODO: must be same as 't_end' of main simulation node.
+  t1 = 1;  // TODO: via time for 'quat1'
+  t2 = 2;  // TODO: via time for 'quat2'
+  t_end = 3;  // TODO: must be same as 't_end' of main simulation node.
 
   // Note: generalized postion of object is defined according to 'wrist_3_link_r' link:
   wrist_3_length = 0.0823;  // based on 'ur5.urdf.xacro'
@@ -58,17 +40,25 @@ int main(){
 
 
   initialPoseOfWrist3_y = -.191;  // TODO: uncomment for 'wrist_3_link_r'
-  // offsetAlongLocalYaxis = objCOMinWrist3_r;  // TODO: uncommment when object is added to 'wrist_3_link_r'
-  offsetAlongLocalYaxis = 0;  // TODO: uncommment when object is removed from 'wrist_3_link_r'
 
-  // initialPoseOfWrist3_y = .191;  // TODO: uncomment for 'wrist_3_link_l'
-  // offsetAlongLocalYaxis = 0;  // TODO: uncommment for 'wrist_3_link_l'
+  offsetAlongLocalYaxis = objCOMinWrist3_r;  // TODO: uncommment when object is added to 'wrist_3_link_r', SINGLE and BIMANUAL scenarios.
+  // offsetAlongLocalYaxis = 0;  // TODO: uncommment when object is removed from 'wrist_3_link_r', SINGLE right ur5
+
+  // initialPoseOfWrist3_y = .191;  // TODO: uncomment for 'wrist_3_link_l', SINGLE left ur5
+  // offsetAlongLocalYaxis = 0;  // TODO: uncommment for 'wrist_3_link_l', SINGLE left ur5
+
+  p0 << .3922, initialPoseOfWrist3_y + offsetAlongLocalYaxis, .609;  // initial linear position of object (x, y, z), according to 'wrist_3_link'
+  pf << .3922, initialPoseOfWrist3_y + offsetAlongLocalYaxis - .1, .609;  // final linear position
 
   Eigen::Quaterniond quat0(1, 0, 0, 0);  // TODO: initial angular position, uncomment for 'wrist_3_link_r' (quaternion (w, q1, q2, q3)),  0 (rad) z-axis
-  Eigen::Quaterniond quat1(.9659, 0, .2588, 0);  // TODO: pi/6 (rad) z-axis
-  Eigen::Quaterniond quat2(.9239, 0, .3827, 0);  // TODO: pi/4 (rad) z-axis
-  Eigen::Quaterniond quatf(.8661, 0, .4999, 0);  // TODO: pi/3
+  // Eigen::Quaterniond quat1(.9659, 0, .2588, 0);  // TODO: pi/6 (rad) z-axis
+  // Eigen::Quaterniond quat2(.9239, 0, .3827, 0);  // TODO: pi/4 (rad) z-axis
+  // Eigen::Quaterniond quatf(.8661, 0, .4999, 0);  // TODO: pi/3
+  Eigen::Quaterniond quat1(1, 0, 0, 0);  // TODO: pi/6 (rad) z-axis
+  Eigen::Quaterniond quat2(1, 0, 0, 0);  // TODO: pi/4 (rad) z-axis
+  Eigen::Quaterniond quatf(1, 0, 0, 0);  // TODO: pi/3
 
+  // SINGLE left ur5:
   // Eigen::Quaterniond quat0(0, 0, 0, 1);  // TODO: initial angular position, uncomment for 'wrist_3_link_l'(quaternion (w, q1, q2, q3)),  pi (rad) z-axis
   // Eigen::Quaterniond quat1(0, 0.2588, 0, .9659);  // TODO: pi/6 (rad) z-axis
   // Eigen::Quaterniond quat2(0, 0.3827, 0, .9239);  // TODO: pi/4 (rad) z-axis
@@ -76,8 +66,8 @@ int main(){
 
 
 
-  p0 << .3922, initialPoseOfWrist3_y + offsetAlongLocalYaxis, .609;  // initial linear position of object (x, y, z), according to 'wrist_3_link'
-  pf << .3922, initialPoseOfWrist3_y + offsetAlongLocalYaxis, .609;  // final linear position
+
+
   v0.setZero();  // initial linear velocity
   vf.setZero();  // final linear velocity
   a0.setZero();  // initial linear acceleration
@@ -87,11 +77,6 @@ int main(){
   wf.setZero();  // final angular velocity (omega (roll, pitch, yaw))
   dw0.setZero();  // initial angular acceleration (alpha (roll, pitch, yaw))
   dwf.setZero();  // final angular acceleration (alpha (roll, pitch, yaw))
-
-
-
-
-
 
   t_via.push_back(t1);
   t_via.push_back(t2);
