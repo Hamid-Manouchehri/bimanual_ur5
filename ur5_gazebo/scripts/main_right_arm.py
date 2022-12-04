@@ -6,7 +6,7 @@ Created on Sat Aug 27 11:20:33 2022
 """
 from __future__ import division
 
-from numpy.linalg import inv, pinv
+from numpy.linalg import inv, pinv, cond
 from scipy.linalg import qr, sqrtm
 from math import sin, cos, sqrt
 import rbdl
@@ -30,7 +30,7 @@ time_ = 0
 dt = 0.
 time_gaz_pre = 0.
 time_gaz = 0.
-t_end = 4.5
+t_end = 3
 g0 = 9.81
 writeHeaderOnceFlag = True
 finiteTimeSimFlag = False  # TODO: True: simulate to 't_end', Flase: Infinite time
@@ -41,13 +41,14 @@ wrist_3_length = 0.0823  # based on 'ur5.urdf.xacro'
 obj_length = .2174  # based on 'ur5.urdf.xacro'
 # objCOMinWrist3_r = obj_length / 2 + wrist_3_length  # TODO: uncomment as object is added.
 objCOMinWrist3_r = 0  # TODO: uncomment as object is removed.
-poseOfObjCOMInWrist3Frame_r = np.array([0., objCOMinWrist3_r, 0.])  # (x, y, z)
+# poseOfObjCOMInWrist3Frame_r = np.array([0., wrist_3_length, 0.])  # (x, y, z)
+poseOfObjCOMInWrist3Frame_r = np.array([0., 0., 0.])  # (x, y, z)
 
-workspaceDof = 6
-singleArmDof = 6
-qDotCurrent_pre_r = np.zeros(singleArmDof)
-qctrl_des_prev_r = np.zeros(singleArmDof)  # initial angular position of joints; joints in home configuration have zero angles.
-dqctrl_des_prev_r = np.zeros(singleArmDof)  # initial angular velocity of joints; we usually start from rest
+workspaceDoF = 6
+singleArmDoF = 6
+qDotCurrent_pre_r = np.zeros(singleArmDoF)
+qctrl_des_prev_r = np.zeros(singleArmDoF)  # initial angular position of joints; joints in home configuration have zero angles.
+dqctrl_des_prev_r = np.zeros(singleArmDoF)  # initial angular velocity of joints; we usually start from rest
 
 index = 0
 traj_time = []
@@ -60,13 +61,13 @@ k_p_pose = np.array([[1, 0, 0],
 
 k_o = np.array([[1, 0, 0],
                 [0, 1, 0],
-                [0, 0, 1]]) * 20
+                [0, 0, 1]]) * 40
 
 kp_a_lin = 100
 kd_a_lin = kp_a_lin / 5
 
 kp_a_ang = 100
-kd_a_ang = kp_a_ang / 10
+kd_a_ang = kp_a_ang / 5
 
 
 initialPoseOfObjInWorld_x_r = 0.3922
@@ -182,7 +183,7 @@ def WriteToCSV(data, yAxisLabel=None,legendList=None, t=None):
             writer.writerow(np.hstack(['time', yAxisLabel, legendList]))
             writeHeaderOnceFlag = False
 
-        writer.writerow(np.hstack([t, data]))  # the first element is time var.
+        writer.writerow(np.hstack([t, data]))  # the first el ment is time var.
 
 
 def EulerToUnitQuaternion_zyx(eulerAngles):
@@ -212,6 +213,30 @@ def CalcGeneralizedVel_ref(currentPose, desPose, desVel, e_o):
     # return X_dot_r
 
     return P_dot_ref, omega_ref
+
+
+def PositinoControl(q_r, qDot_r, qDDot_r):
+
+    k_p = 700
+    k_v = 40
+
+    ## joints: [shoulder_pan, shoulder_lift, elbow, wrist_1, wrist_2, wrist_3]
+    qDes_r = np.array([0., 0.0, 0, 0, 0., 0.])  # TODO
+    print(np.round(q_r, 3))
+    qDotDes_r = np.zeros(singleArmDoF)
+    qDDotDes_r = np.zeros(singleArmDoF)
+
+    M_r = rbdl_methods.CalcM(loaded_model_r, q_r)
+    h_r = rbdl_methods.CalcH(loaded_model_r, q_r, qDot_r)
+
+    pose_error = qDes_r - q_r
+    vel_error = qDotDes_r - qDot_r
+
+    f_prime = qDDotDes_r + k_v * vel_error + k_p * pose_error
+
+    tau = M_r.dot(f_prime) + h_r
+
+    return tau
 
 
 def InverseDynamic(qCurrent_r, qDotCurrent_r, qDDotCurrent_r, qDes, qDotDes, qDDotDes):
@@ -282,7 +307,7 @@ def Task2Joint(qCurrent_r, qDotCurrent_r, qDDotCurrent_r, poseDesTraj, velDesTra
     # desOrientationOfObjInQuat = EulerToUnitQuaternion_zyx(poseDesTraj[3:])  # equ(297), attitude, for circular trajectory
     # e_o = CalcOrientationErrorInQuaternion(currentOrientationOfObjInQuat, desOrientationOfObjInQuat)  # for circular trajectory
 
-    e_o = CalcOrientationErrorInQuaternion(currentOrientationOfObjInQuat, poseDesTraj[3:])  # equ(4), orientation planning, traj6d
+    e_o = CalcOrientationErrorInQuaternion(currentOrientationOfObjInQuat, poseDesTraj[3:])  # equ(4), orientation planning, for traj6d trajectory
     # WriteToCSV(e_o, 'pose Error_angular', ['e_r', 'e_p', 'e_y'])
 
     # xDot_ref = CalcGeneralizedVel_ref(currentPoseOfObj, poseDesTraj[:3], velDesTraj, e_o)  # equ(1), orientation planning
@@ -308,6 +333,7 @@ def Task2Joint(qCurrent_r, qDotCurrent_r, qDDotCurrent_r, poseDesTraj, velDesTra
 
     jac = rbdl_methods.Jacobian(loaded_model_r, qCurrent_r, linkName_r,
                                 poseOfObjCOMInWrist3Frame_r)
+    print(cond(jac))
 
     qDDotDes = pinv(jac).dot(accelDesTraj - dJdq)  # equ(21)
 
@@ -381,9 +407,9 @@ def JointStatesCallback(data):
     q = np.array(q, dtype=float)
     qDot = np.array(qDot, dtype=float)
 
-    qCurrent_r = np.zeros(singleArmDof)
-    qDotCurrent_r = np.zeros(singleArmDof)
-    qDDotCurrent_r = np.zeros(singleArmDof)
+    qCurrent_r = np.zeros(singleArmDoF)
+    qDotCurrent_r = np.zeros(singleArmDoF)
+    qDDotCurrent_r = np.zeros(singleArmDoF)
 
     qCurrent_r[0] = q[5]  # shoulder_pan_joint_r
     qCurrent_r[1] = q[3]  # shoulder_lift_joint_r
@@ -391,6 +417,8 @@ def JointStatesCallback(data):
     qCurrent_r[3] = q[7]  # wrist_1_joint_r
     qCurrent_r[4] = q[9]  # wrist_2_joint_r
     qCurrent_r[5] = q[11]  # wrist_3_joint_r
+
+    # print(np.round(qCurrent_r, 3))
 
     qDotCurrent_r[0] = qDot[5]
     qDotCurrent_r[1] = qDot[3]
@@ -409,7 +437,7 @@ def JointStatesCallback(data):
     poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
                                               IterateThroughTraj6dData(time_gaz)
     # poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
-    #                                             TrajectoryGeneration(.2, time_gaz)
+    #                                             TrajectoryGeneration(.1, time_gaz)
 
     ## detemine desired states of robot in joint-space: (qDDot_desired, ...)
     jointPoseDes, jointVelDes, jointAccelDes = Task2Joint(qCurrent_r,
@@ -422,9 +450,9 @@ def JointStatesCallback(data):
     jointTau = InverseDynamic(qCurrent_r, qDotCurrent_r, qDDotCurrent_r,
                               jointPoseDes, jointVelDes, jointAccelDes)
 
-    PubTorqueToGazebo(jointTau)
+    # jointTau = PositinoControl(qCurrent_r, qDotCurrent_r, qDDotCurrent_r)
 
-    # time_ += dt
+    PubTorqueToGazebo(jointTau)
 
 
 def ReadTrajData():

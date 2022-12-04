@@ -28,9 +28,9 @@ int main(){
 
 
   t0 = 0;
-  t1 = 1;  // TODO: via time for 'quat1'
-  t2 = 2;  // TODO: via time for 'quat2'
-  t_end = 3;  // TODO: must be same as 't_end' of main simulation node.
+  t1 = .75;  // TODO: via time for 'quat1'
+  t2 = 1.5;  // TODO: via time for 'quat2'
+  t_end = 2;  // TODO: must be same as 't_end' of main simulation node.
 
   // Note: generalized postion of object is defined according to 'wrist_3_link_r' link:
   wrist_3_length = 0.0823;  // based on 'ur5.urdf.xacro'
@@ -40,23 +40,38 @@ int main(){
 
 
   initialPoseOfWrist3_y = -.191;  // TODO: uncomment for 'wrist_3_link_r'
-
   offsetAlongLocalYaxis = objCOMinWrist3_r;  // TODO: uncommment when object is added to 'wrist_3_link_r', SINGLE and BIMANUAL scenarios.
   // offsetAlongLocalYaxis = 0;  // TODO: uncommment when object is removed from 'wrist_3_link_r', SINGLE right ur5
 
   // initialPoseOfWrist3_y = .191;  // TODO: uncomment for 'wrist_3_link_l', SINGLE left ur5
   // offsetAlongLocalYaxis = 0;  // TODO: uncommment for 'wrist_3_link_l', SINGLE left ur5
 
-  p0 << .3922, initialPoseOfWrist3_y + offsetAlongLocalYaxis, .609;  // initial linear position of object (x, y, z), according to 'wrist_3_link'
-  pf << .3922, initialPoseOfWrist3_y + offsetAlongLocalYaxis - .1, .609;  // final linear position
+  p0 << .552, initialPoseOfWrist3_y + offsetAlongLocalYaxis, .166;  // initial linear position of object (x, y, z), according to 'wrist_3_link'
+  pf << .552, initialPoseOfWrist3_y + offsetAlongLocalYaxis, .166;  // final linear position
 
-  Eigen::Quaterniond quat0(1, 0, 0, 0);  // TODO: initial angular position, uncomment for 'wrist_3_link_r' (quaternion (w, q1, q2, q3)),  0 (rad) z-axis
-  // Eigen::Quaterniond quat1(.9659, 0, .2588, 0);  // TODO: pi/6 (rad) z-axis
-  // Eigen::Quaterniond quat2(.9239, 0, .3827, 0);  // TODO: pi/4 (rad) z-axis
-  // Eigen::Quaterniond quatf(.8661, 0, .4999, 0);  // TODO: pi/3
-  Eigen::Quaterniond quat1(1, 0, 0, 0);  // TODO: pi/6 (rad) z-axis
-  Eigen::Quaterniond quat2(1, 0, 0, 0);  // TODO: pi/4 (rad) z-axis
-  Eigen::Quaterniond quatf(1, 0, 0, 0);  // TODO: pi/3
+  //// [w, x, y, z]
+  Eigen::Quaterniond quat0(0, 0, 1, 0);  // TODO: initial angular position, uncomment for 'wrist_3_link_r',  pi (rad) z-axis
+  // Eigen::Quaterniond quat1(0, 0, 1, 0);  // fixed
+  // Eigen::Quaterniond quat2(0, 0, 1, 0);  // fixed
+  // Eigen::Quaterniond quatf(0, 0, 1, 0);  // fixed
+
+  // Eigen::Quaterniond quat1(0, 0, .9659, -.2588);  // TODO: pi + pi/6 (rad) x-axis
+  // Eigen::Quaterniond quat2(0, 0, .9239, -0.3827);  // TODO: pi + pi/4 (rad) x-axis
+  // Eigen::Quaterniond quatf(0, 0, .866, -0.5);  // TODO: pi + pi/3 (rad) x-axis
+
+  // Eigen::Quaterniond quat1(-0.2588, 0, .9659, 0);  // TODO: pi + pi/6 (rad) y-axis
+  // Eigen::Quaterniond quat2(-0.3827, 0, .9239, 0);  // TODO: pi + pi/4 (rad) y-axis
+  // Eigen::Quaterniond quatf(-0.5, 0, .866, 0);  // TODO: pi + pi/3 (rad) y-axis
+
+  Eigen::Quaterniond quat1(0, -0.2588, .9659, 0.);  // TODO: pi + pi/6 (rad) z-axis
+  Eigen::Quaterniond quat2(0, -0.3827, .9239, 0.);  // TODO: pi + pi/4 (rad) z-axis
+  Eigen::Quaterniond quatf(0, -0.5, .866, 0.);  // TODO: pi + pi/3 (rad) z-axis
+
+
+
+
+
+
 
   // SINGLE left ur5:
   // Eigen::Quaterniond quat0(0, 0, 0, 1);  // TODO: initial angular position, uncomment for 'wrist_3_link_l'(quaternion (w, q1, q2, q3)),  pi (rad) z-axis

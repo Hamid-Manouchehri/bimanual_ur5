@@ -27,10 +27,7 @@
        something strange when unpausing it
   -->
   <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model"
-        args="-urdf -param robot_description -model robot -z 0.594
-              -J shoulder_lift_joint_r 0
-              -J elbow_joint_r 0
-              -J wrist_1_joint_r 0"
+        args="-urdf -param robot_description -model robot -z 0.594"
         output="screen" />
 
   <include file="$(find ur5_gazebo)/launch/ur5_controllers.launch" />

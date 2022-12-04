@@ -5,7 +5,7 @@ Created on Sat Aug 27 11:20:33 2022
 @author: Hamid Manouchehri
 """
 from __future__ import division
-from numpy.linalg import inv, pinv
+from numpy.linalg import inv, pinv, cond
 from scipy.linalg import qr, sqrtm
 from math import sin, cos, sqrt, atan2, asin
 import rbdl
@@ -25,14 +25,13 @@ os.chdir('/home/rebel/ROS1_workspaces/bimanual_ur5_ws/src/ur5_gazebo/scripts/') 
 import rbdl_methods  # TODO: change the file name if necessary.
 ####
 
-time_ = 0
 dt = 0.
 time_gaz_pre = 0.
 time_gaz = 0.
-t_end = 3
+t_end = 2
 g0 = 9.81
 writeHeaderOnceFlag = True
-finiteTimeSimFlag = True  # TODO: True: simulate to 't_end', Flase: Infinite time
+finiteTimeSimFlag = False  # TODO: True: simulate to 't_end', Flase: Infinite time
 """ For specifying which arm is right(r) and which one is left(l), imagine
 yourself on top of the table and your front is toward positive x-axis.
 """
@@ -70,51 +69,34 @@ k_p_pose = np.array([[1, 0, 0],
 
 k_o = np.array([[1, 0, 0],
                 [0, 1, 0],
-                [0, 0, 1]]) * 20
+                [0, 0, 1]]) * 30
 
-kp_a_lin = 50
+kp_a_lin = 300
 kd_a_lin = kp_a_lin / 5
 
-kp_a_ang = 50
-kd_a_ang = kp_a_ang / 10
-
-
-## right arm:
-initialPoseOfObjInWorld_x_r = 0.3922
-initialPoseOfObjInWorld_y_r = -.191
-initialPoseOfObjInWorld_z_r = .609
-
-## Attention that the sequence of orientation is xyz Euler angles:
-initialOrientationOfObj_roll_r = 0.
-initialOrientationOfObj_pitch_r = 0.
-initialOrientationOfObj_yaw_r = 0.
-
-## left arm:
-initialPoseOfObjInWorld_x_l = 0.3922
-initialPoseOfObjInWorld_y_l = .191
-initialPoseOfObjInWorld_z_l = .609
-
-initialOrientationOfObj_roll_l = 0.
-initialOrientationOfObj_pitch_l = 0.
-initialOrientationOfObj_yaw_l = np.pi
+kp_a_ang = 100
+kd_a_ang = kp_a_ang / 5
 
 
 ## dynamic specifications of object:
 obj_mass = .5  # TODO: according to 'ur5.urdf.xacro'
-io_zz = 1  # TODO: according to 'ur5.urdf.xacro'
-M_o = np.eye(singleArmDoF)*obj_mass
-# M_o[5, 5] = io_zz  # ???????????????????????????
-h_o = np.array([0, 0, obj_mass*g0, 0, 0, 0]) # ??????????????????????????????????
+M_o = np.eye(workspaceDoF)
+inertiaTensor = np.array([[.0021, 0, 0],
+                          [0, .00021, 0],
+                          [0, 0, .0021]])  # TODO: according to 'ur5.urdf.xacro'
+M_o[:3, :3] = M_o[:3, :3]*obj_mass
+M_o[3:, 3:] = inertiaTensor
+h_o = np.array([0., 0., -obj_mass*g0, 0., 0., 0.]) # ??????????????????????????????????
 
 
 ## define dependent directories and including files:
-CSVFileName_plot_data = config.bimanual_ur5_dic['CSVFileName']
 pathToCSVFile = config.bimanual_ur5_dic['CSVFileDirectory']
+CSVFileName_plot_data = config.bimanual_ur5_dic['CSVFileName']
 CSVFileName = pathToCSVFile + CSVFileName_plot_data
 
+pathToArmURDFModels = config.bimanual_ur5_dic['urdfDirectory']
 upperBodyModelFileName_r = config.bimanual_ur5_dic['urdfModelName_r']
 upperBodyModelFileName_l = config.bimanual_ur5_dic['urdfModelName_l']
-pathToArmURDFModels = config.bimanual_ur5_dic['urdfDirectory']
 loaded_model_r = rbdl.loadModel(pathToArmURDFModels + upperBodyModelFileName_r)
 loaded_model_l = rbdl.loadModel(pathToArmURDFModels + upperBodyModelFileName_l)
 
@@ -193,16 +175,30 @@ def PubTorqueToGazebo(torqueVec):
     pub_wrist_3_l.publish(torqueVec[11])
 
 
-def CalcOrientationErrorInQuaternion(orientationInQuatCurrent, orientationInQuatDes):
+def EulerToUnitQuaternion_zyx(eulerAngles):
+    """calculate equ(297) of "attitude" paper:"""
+    phi = eulerAngles[0]
+    theta = eulerAngles[1]
+    psy = eulerAngles[2]
+
+    w = np.cos(phi/2)*np.cos(theta/2)*np.cos(psy/2) + np.sin(phi/2)*np.sin(theta/2)*np.sin(psy/2)
+    v1 = -np.cos(phi/2)*np.sin(theta/2)*np.sin(psy/2) + np.cos(theta/2)*np.cos(psy/2)*np.sin(phi/2)
+    v2 = np.cos(phi/2)*np.cos(psy/2)*np.sin(theta/2) + np.sin(phi/2)*np.cos(theta/2)*np.sin(psy/2)
+    v3 = np.cos(phi/2)*np.cos(theta/2)*np.sin(psy/2) - np.sin(phi/2)*np.cos(psy/2)*np.sin(theta/2)
+
+    return np.array([w, v1, v2, v3])
+
+
+def CalcOrientationErrorInQuaternion(currentOrientationInQuat, desOrientationInQuat):
     """Calculate position error in Quaternion based on the paper."""
 
-    wCurrent = orientationInQuatCurrent[0]
-    vCurrent = orientationInQuatCurrent[1:]
+    wCurrent = currentOrientationInQuat[0]
+    vCurrent = currentOrientationInQuat[1:]
 
-    wDes = orientationInQuatDes[0]
-    vDes = orientationInQuatDes[1:]
+    wDes = desOrientationInQuat[0]
+    vDes = desOrientationInQuat[1:]
 
-    e_o = np.dot(wCurrent, vDes) - np.dot(wDes, vCurrent) - np.cross(vDes, vCurrent)  # (3*1)
+    e_o = np.dot(wCurrent, vDes) - np.dot(wDes, vCurrent) - np.cross(vDes, vCurrent)  # (1*3)
 
     return e_o  # (1*3)
 
@@ -242,8 +238,8 @@ def CalcGeneralizedVel_ref(currentPose, desPose, desVel, e_o):
     P_dot_des = desVel[:3]
     omega_des = desVel[3:]
 
-    P_dot_ref = P_dot_des + k_p_pose.dot(desPose - currentPose)
-    omega_ref = omega_des + k_o.dot(e_o)
+    P_dot_ref = P_dot_des + k_p_pose.dot(desPose - currentPose)  # (1*3)
+    omega_ref = omega_des + k_o.dot(e_o)  # (1*3)
 
     X_dot_r = np.concatenate((P_dot_ref, omega_ref))
 
@@ -457,26 +453,26 @@ def TaskToJoint(qCurrent, qDotCurrent, qDDotCurrent, poseDesTraj, velDesTraj,
     dJ_B_dq = inv(G_o_l).dot(dJdq_l - Gdotdz_o_l)  # an element of equ(21): (1*6)
 
     translationalError = poseDesTraj[:3] - currentPoseOfObj  # (1*3)
+    # WriteToCSV(translationalError, 'pose Error', ['e_x', 'e_y', 'e_z'])
+
     e_o = CalcOrientationErrorInQuaternion(currentOrientationOfObjInQuat, poseDesTraj[3:])  # equ(4), orientation planning, (1*3)
+    # WriteToCSV(e_o, 'orientation Error', ['e_r', 'e_p', 'e_y'])
     poseError = np.concatenate((translationalError, e_o))
+    # WriteToCSV(poseError, 'Generalized Pose Error', ['e_x', 'e_y', 'e_z', 'e_roll', 'e_pitch', 'e_yaw'])
 
     xDot_ref = CalcGeneralizedVel_ref(currentPoseOfObj, poseDesTraj[:3], velDesTraj, e_o)  # equ(1), orientation planning, (1*6)
     velError = xDot_ref - currentGeneralizedVelOfObj
 
-    # accelDesTraj_lin = accelDesTraj[:3] + kd_a_lin * velError[:3] + kp_a_lin * poseError[:3]  # a, below equ(21), (1*3)
-    # accelDesTraj_ang = accelDesTraj[3:] + kd_a_ang * velError[3:] + kp_a_ang * poseError[3:]  # a, below equ(21), (1*3)
-    # accelDesTraj = np.concatenate((accelDesTraj_lin, accelDesTraj_ang))
-
-    # poseError = poseDesTraj - currentGeneralizedPoseOfObjQuat  # test
-    velError = velDesTraj - currentGeneralizedVelOfObj  # test
-    accelDesTraj = accelDesTraj + kd_a_ang * velError + kp_a_ang * poseError  # test
-    accelDesTraj = np.concatenate((accelDesTraj[:3], np.zeros(3)))
+    accelDesTraj_lin = accelDesTraj[:3] + kd_a_lin * velError[:3] + kp_a_lin * poseError[:3]  # a, below equ(21), (1*3)
+    accelDesTraj_ang = accelDesTraj[3:] + kd_a_ang * velError[3:] + kp_a_ang * poseError[3:]  # a, below equ(21), (1*3)
+    accelDesTraj = np.concatenate((accelDesTraj_lin, accelDesTraj_ang))
 
     J_B = inv(G_o_l).dot(J_l)  # (6*12)
     J_A = np.vstack((J_g, J_B))  # (12*12)
     dJ_A_dq = np.concatenate((dJ_A_dq, dJ_B_dq))  # (1*12)
     xDDotDes = np.concatenate((np.zeros(6), accelDesTraj))  # (1*12)
     qDDotDes = pinv(J_A).dot(xDDotDes - dJ_A_dq)  # equ(21), (1*12)
+    # print(np.round(qDDotDes, 3))
 
     qDes, qDotDes = TrajEstimate(qDDotDes)
 
@@ -507,11 +503,12 @@ def CalcG_oi(r_o_i):
 
 def PositinoControl(q, qDot, qDDot):
 
-    k_p = 100
-    k_v = 10
+    k_p = 700
+    k_v = 40
 
-    qDes_r = np.array([0, 0, 0, 0, 0, 0])
-    qDes_l = np.array([0, 0, 0, 0, 0, 0])
+    ## joints: [shoulder_pan, shoulder_lift, elbow, wrist_1, wrist_2, wrist_3]
+    qDes_r = np.array([0, 0, 0, 0, 0, 0])  # TODO
+    qDes_l = np.array([0, 0, 0, 0, 0, 0])  # TODO
     qDes = np.concatenate((qDes_r, qDes_l))
     qDotDes = np.zeros(doubleArmDoF)
     qDDotDes = np.zeros(doubleArmDoF)
@@ -618,40 +615,6 @@ def BimanualAlgorithm(qCurrent, qDotCurrent, qDDotCurrent,
     return jointTau
 
 
-def TrajectoryGeneration(r, t):
-    """Circular trajectory of the defined 'radius':"""
-
-    ## desired trajectory (position):
-    xDes = initialPoseOfObjInWorld_x_r
-    yDes = r*np.sin(t) + initialPoseOfObjInWorld_y_r
-    zDes = r*np.cos(t) + initialPoseOfObjInWorld_z_r
-    phiDes = initialOrientationOfObj_roll_r
-    thetaDes = initialOrientationOfObj_pitch_r
-    psyDes = initialOrientationOfObj_yaw_r
-    poseTrajectoryDes = np.array([xDes, yDes, zDes, phiDes, thetaDes, psyDes])
-
-    ## desired trajectory (velocity):
-    xDotDes = 0.
-    yDotDes = r*np.cos(t)
-    zDotDes = -r*np.sin(t)
-    phiDotDes = 0.
-    thetaDotDes = 0.
-    psyDotDes = 0.
-    velTrajectoryDes = np.array([xDotDes, yDotDes, zDotDes,
-                                 phiDotDes, thetaDotDes, psyDotDes])
-
-    ## desired trajectory (acceleration):
-    xDDotDes = 0.
-    yDDotDes = -r*np.sin(t)
-    zDDotDes = -r*np.cos(t)
-    phiDDotDes = 0.
-    thetaDDotDes = 0.
-    psyDDotDes = 0.
-    accelTrajectoryDes = np.array([xDDotDes, yDDotDes, zDDotDes,
-                                   phiDDotDes, thetaDDotDes, psyDDotDes])
-
-    return poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes
-
 
 def IterateThroughTraj6dData(gaz_time):
     global index
@@ -670,8 +633,7 @@ def JointStatesCallback(data):
     """
     Subscribe to robot's joints' position and velocity and publish torques.
     """
-    global time_, qDotCurrent_pre_r, qDotCurrent_pre_l, dt, time_gaz, \
-           time_gaz_pre
+    global qDotCurrent_pre_r, qDotCurrent_pre_l, dt, time_gaz, time_gaz_pre
 
     ## Terminate the node after 't_end' seconds of simulation:
     if time_gaz >= t_end and finiteTimeSimFlag:
@@ -725,19 +687,17 @@ def JointStatesCallback(data):
     qDotCurrent = np.concatenate((qDotCurrent_r, qDotCurrent_l))
 
     time_gaz = rospy.get_time()  # get gazebo simulation time (Sim Time)
-    dt = time_gaz - time_gaz_pre + .001
+    dt = time_gaz - time_gaz_pre
     time_gaz_pre = time_gaz
 
     # qDDotCurrent_r = (qDotCurrent_r - qDotCurrent_pre_r) / dt
     # qDotCurrent_pre_r = qDotCurrent_r
-
+    #
     # qDDotCurrent_l = (qDotCurrent_l - qDotCurrent_pre_l) / dt
     # qDotCurrent_pre_l = qDotCurrent_l
 
     qDDotCurrent = np.concatenate((qDDotCurrent_r, qDDotCurrent_l))
 
-    # poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
-    #                                             TrajectoryGeneration(.2, time_gaz)
     poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
                                               IterateThroughTraj6dData(time_gaz)
 
