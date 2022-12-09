@@ -12,7 +12,7 @@
   <xacro:property name="wrist_1_mass" value="1.2190" />
   <xacro:property name="wrist_2_mass" value="1.2190" />
   <xacro:property name="wrist_3_mass" value="0.1879" />
-  <xacro:property name="obj_mass" value="0.5" />
+  <xacro:property name="obj_mass" value="1" />
 
   <xacro:property name="shoulder_cog" value="0.0 0.00193 -0.02561" />
   <xacro:property name="upper_arm_cog" value="0.0 -0.024201 0.2125" />
@@ -52,14 +52,6 @@
   <xacro:property name="wrist_2_length" value="${ur5_d5}" />
   <xacro:property name="wrist_3_length" value="${ur5_d6}" />
   <xacro:property name="obj_length" value="0.2174" />
-  <!--property name="shoulder_height" value="0.089159" /-->
-  <!--property name="shoulder_offset" value="0.13585" /-->  <!-- shoulder_offset - elbow_offset + wrist_1_length = 0.10915 -->
-  <!--property name="upper_arm_length" value="0.42500" /-->
-  <!--property name="elbow_offset" value="0.1197" /-->       <!-- CAD measured -->
-  <!--property name="forearm_length" value="0.39225" /-->
-  <!--property name="wrist_1_length" value="0.093" /-->     <!-- CAD measured -->
-  <!--property name="wrist_2_length" value="0.09465" /-->   <!-- In CAD this distance is 0.930, but in the spec it is 0.09465 -->
-  <!--property name="wrist_3_length" value="0.0823" /-->
 
   <xacro:property name="shoulder_radius" value="0.060" />   <!-- manually measured -->
   <xacro:property name="upper_arm_radius" value="0.054" />  <!-- manually measured -->
@@ -99,8 +91,6 @@
       </xacro:cylinder_inertial>
     </link>
 
-
-
     <joint name="${prefix}shoulder_pan_joint_r" type="revolute">
       <parent link="${prefix}base_link_r" />
       <child link = "${prefix}shoulder_link_r" />
@@ -137,7 +127,7 @@
     <joint name="${prefix}shoulder_lift_joint_r" type="revolute">
       <parent link="${prefix}shoulder_link_r" />
       <child link = "${prefix}upper_arm_link_r" />
-      <!-- <origin xyz="0.0 ${shoulder_offset} 0.0" rpy="0.0 0.0 0.0" /> -->
+      <!-- <origin xyz="0.0 ${shoulder_offset} 0.0" rpy="0.0 ${pi / 2.0} 0.0" /> -->
       <origin xyz="0.0 ${shoulder_offset} 0.0" rpy="0.0 ${pi / 6.0} 0.0" />
       <axis xyz="0 1 0" />
       <xacro:unless value="${joint_limited}">
@@ -171,7 +161,7 @@
     <joint name="${prefix}elbow_joint_r" type="revolute">
       <parent link="${prefix}upper_arm_link_r" />
       <child link = "${prefix}forearm_link_r" />
-      <!-- <origin xyz="0.0 ${elbow_offset} ${upper_arm_length}" rpy="0.0 ${pi / 2.0} 0.0" /> -->
+      <!-- <origin xyz="0.0 ${elbow_offset} ${upper_arm_length}" rpy="0.0 0.0 0.0" /> -->
       <origin xyz="0.0 ${elbow_offset} ${upper_arm_length}" rpy="0.0 ${pi / 2.0} 0.0" />
       <axis xyz="0 1 0" />
       <xacro:unless value="${joint_limited}">
@@ -197,15 +187,16 @@
           <mesh filename="package://ur5_description/meshes/ur5/collision/forearm.stl" />
         </geometry>
       </collision>
-      <xacro:cylinder_inertial radius="0.06" length="0.5" mass="${forearm_mass}">
-        <origin xyz="0.0 0.0 0.25" rpy="0 0 0" />
+      <xacro:cylinder_inertial radius="0.06" length="${-ur5_a3}" mass="${forearm_mass}">
+        <origin xyz="0.0 0.0 ${-ur5_a3/2.0}" rpy="0 0 0" />
       </xacro:cylinder_inertial>
     </link>
 
     <joint name="${prefix}wrist_1_joint_r" type="revolute">
       <parent link="${prefix}forearm_link_r" />
       <child link = "${prefix}wrist_1_link_r" />
-      <!-- <origin xyz="0.0 0.0 ${forearm_length}" rpy="0.0 ${-pi / 2.0} 0.0" /> -->
+      <!-- <origin xyz="0.0 0.0 ${forearm_length}" rpy="0.0 ${pi / 2.0} 0.0" /> -->
+      <!-- <origin xyz="0.0 0.0 ${forearm_length}" rpy="0.0 -2.09439 0.0" />  <!- do not know why ${-2.0 * pi / 3.0} collapses ODE --> -->
       <origin xyz="0.0 0.0 ${forearm_length}" rpy="0.0 ${pi / 3.0} 0.0" />
       <axis xyz="0 1 0" />
       <xacro:unless value="${joint_limited}">
@@ -231,8 +222,8 @@
           <mesh filename="package://ur5_description/meshes/ur5/collision/wrist1.stl" />
         </geometry>
       </collision>
-      <xacro:cylinder_inertial radius="0.6" length="0.12" mass="${wrist_1_mass}">
-        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <xacro:cylinder_inertial radius="0.06" length="0.12" mass="${wrist_1_mass}">
+        <origin xyz="0.0 ${wrist_1_length} 0.0" rpy="0 0 0" />
       </xacro:cylinder_inertial>
     </link>
 
@@ -264,8 +255,8 @@
           <mesh filename="package://ur5_description/meshes/ur5/collision/wrist2.stl" />
         </geometry>
       </collision>
-      <xacro:cylinder_inertial radius="0.6" length="0.12" mass="${wrist_2_mass}">
-        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <xacro:cylinder_inertial radius="0.06" length="0.12" mass="${wrist_2_mass}">
+        <origin xyz="0.0 0.0 ${wrist_2_length}" rpy="0 0 0" />
       </xacro:cylinder_inertial>
     </link>
 
@@ -297,12 +288,12 @@
           <mesh filename="package://ur5_description/meshes/ur5/collision/wrist3.stl" />
         </geometry>
       </collision>
-      <xacro:cylinder_inertial radius="0.6" length="0.12" mass="${wrist_3_mass}">
-        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <xacro:cylinder_inertial radius="0.0375" length="0.0345" mass="${wrist_3_mass}">
+        <origin xyz="0.0 ${wrist_3_length - 0.0345/2.0} 0.0" rpy="0 0 0" />
       </xacro:cylinder_inertial>
     </link>
 
-    <joint name="${prefix}ee_fixed_joint_r" type="fixed">
+    <!-- <joint name="${prefix}ee_fixed_joint_r" type="fixed">
       <parent link="${prefix}wrist_3_link_r" />
       <child link = "${prefix}ee_link_r" />
       <origin xyz="0.0 ${wrist_3_length} 0.0" rpy="0.0 0.0 ${pi/2.0}" />
@@ -315,30 +306,30 @@
         </geometry>
         <origin rpy="0 0 0" xyz="-0.01 0 0"/>
       </collision>
-    </link>
+    </link> -->
 
     <xacro:ur_arm_transmission prefix="${prefix}" />
     <xacro:ur_arm_gazebo prefix="${prefix}" />
 
     <!-- ROS base_link to UR 'Base' Coordinates transform -->
-    <link name="${prefix}base_r"/>
-    <joint name="${prefix}base_link_r-base_fixed_joint" type="fixed">
+    <!-- <link name="${prefix}base_r"/>
+    <joint name="${prefix}base_link_r-base_fixed_joint" type="fixed"> -->
       <!-- NOTE: this rotation is only needed as long as base_link itself is
                  not corrected wrt the real robot (ie: rotated over 180
                  degrees)
       -->
-      <origin xyz="0 0 0" rpy="0 0 ${-pi}"/>
+      <!-- <origin xyz="0 0 0" rpy="0 0 ${-pi}"/>
       <parent link="${prefix}base_link_r"/>
       <child link="${prefix}base_r"/>
-    </joint>
+    </joint> -->
 
     <!-- Frame coincident with all-zeros TCP on UR controller -->
-    <link name="${prefix}tool0_r"/>
+    <!-- <link name="${prefix}tool0_r"/>
     <joint name="${prefix}wrist_3_link_r-tool0_fixed_joint" type="fixed">
       <origin xyz="0 ${wrist_3_length} 0" rpy="${pi/-2.0} 0 0"/>
       <parent link="${prefix}wrist_3_link_r"/>
       <child link="${prefix}tool0_r"/>
-    </joint>
+    </joint> -->
 
     <link name="${prefix}base_link_l" >
       <visual>
@@ -454,15 +445,15 @@
           <mesh filename="package://ur5_description/meshes/ur5/collision/forearm.stl" />
         </geometry>
       </collision>
-      <xacro:cylinder_inertial radius="0.06" length="0.5" mass="${forearm_mass}">
-        <origin xyz="0.0 0.0 0.25" rpy="0 0 0" />
+      <xacro:cylinder_inertial radius="0.06" length="${-ur5_a3}" mass="${forearm_mass}">
+        <origin xyz="0.0 0.0 ${-ur5_a3/2.0}" rpy="0 0 0" />
       </xacro:cylinder_inertial>
     </link>
 
     <joint name="${prefix}wrist_1_joint_l" type="revolute">
       <parent link="${prefix}forearm_link_l" />
       <child link = "${prefix}wrist_1_link_l" />
-      <!-- <origin xyz="0.0 0.0 ${forearm_length}" rpy="0.0 ${pi / 2.0} 0.0" /> -->
+      <!-- <origin xyz="0.0 0.0 ${forearm_length}" rpy="0.0 2.09439 0.0" />  <! do not know why ${2.0 * pi / 3.0} collapses ODE --> -->
       <origin xyz="0.0 0.0 ${forearm_length}" rpy="0.0 ${-pi / 3.0} 0.0" />
       <axis xyz="0 1 0" />
       <xacro:unless value="${joint_limited}">
@@ -488,8 +479,8 @@
           <mesh filename="package://ur5_description/meshes/ur5/collision/wrist1.stl" />
         </geometry>
       </collision>
-      <xacro:cylinder_inertial radius="0.6" length="0.12" mass="${wrist_1_mass}">
-        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <xacro:cylinder_inertial radius="0.06" length="0.12" mass="${wrist_1_mass}">
+        <origin xyz="0.0 ${wrist_1_length} 0.0" rpy="0 0 0" />
       </xacro:cylinder_inertial>
     </link>
 
@@ -521,8 +512,8 @@
           <mesh filename="package://ur5_description/meshes/ur5/collision/wrist2.stl" />
         </geometry>
       </collision>
-      <xacro:cylinder_inertial radius="0.6" length="0.12" mass="${wrist_2_mass}">
-        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <xacro:cylinder_inertial radius="0.06" length="0.12" mass="${wrist_2_mass}">
+        <origin xyz="0.0 0.0 ${wrist_2_length}" rpy="0 0 0" />
       </xacro:cylinder_inertial>
     </link>
 
@@ -554,74 +545,78 @@
           <mesh filename="package://ur5_description/meshes/ur5/collision/wrist3.stl" />
         </geometry>
       </collision>
-      <xacro:cylinder_inertial radius="0.6" length="0.12" mass="${wrist_3_mass}">
-        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <xacro:cylinder_inertial radius="0.0375" length="0.0345" mass="${wrist_3_mass}">
+        <origin xyz="0.0 ${wrist_3_length - 0.0345/2} 0.0" rpy="0 0 0" />
       </xacro:cylinder_inertial>
     </link>
 
-    <joint name="${prefix}ee_fixed_joint_l" type="fixed">
+    <!-- <joint name="${prefix}ee_fixed_joint_l" type="fixed">
       <parent link="${prefix}wrist_3_link_l" />
       <child link = "${prefix}ee_link_l" />
       <origin xyz="0.0 ${wrist_3_length} 0.0" rpy="0.0 0.0 ${pi/2.0}" />
-    </joint>
+    </joint> -->
 
-    <link name="${prefix}ee_link_l">
+    <!-- <link name="${prefix}ee_link_l">
       <collision>
         <geometry>
           <box size="0.01 0.01 0.01"/>
         </geometry>
         <origin rpy="0 0 0" xyz="-0.01 0 0"/>
       </collision>
-    </link>
+    </link> -->
 
     <!-- ROS base_link to UR 'Base' Coordinates transform -->
-    <link name="${prefix}base_l"/>
+    <!-- <link name="${prefix}base_l"/>
     <joint name="${prefix}base_link_l-base_fixed_joint" type="fixed">
       <origin xyz="0 0 0" rpy="0 0 ${-pi}"/>
       <parent link="${prefix}base_link_l"/>
       <child link="${prefix}base_l"/>
-    </joint>
+    </joint> -->
 
     <!-- Frame coincident with all-zeros TCP on UR controller -->
-    <link name="${prefix}tool0_l"/>
+    <!-- <link name="${prefix}tool0_l"/>
     <joint name="${prefix}wrist_3_link_l-tool0_fixed_joint" type="fixed">
       <origin xyz="0 ${wrist_3_length} 0" rpy="${pi/-2.0} 0 0"/>
       <parent link="${prefix}wrist_3_link_l"/>
       <child link="${prefix}tool0_l"/>
+    </joint> -->
+
+    <!-- URDF parser eliminates 'fixed' joints: -->
+    <joint name="wrist_3_to_obj_joint_r" type="revolute">
+        <parent link="${prefix}wrist_3_link_r" />
+        <child link = "obj_link" />
+        <origin xyz="0.0 ${wrist_3_length} 0.0" rpy="0.0 0.0 0.0" />
+        <axis xyz="0 1 0" />
+        <limit lower="0.0" upper="0.0" effort="0.0" velocity="0.0"/>
+        <dynamics damping="0.0" friction="0.0"/>
     </joint>
 
-    <joint name="wrist_3_to_obj_joint_r" type="fixed">
-        <origin rpy="0 0 0" xyz="0 ${wrist_3_length} 0"/>
-        <parent link="${prefix}wrist_3_link_r"/>
-        <child link="obj"/>
-    </joint>
-
-    <link name="obj">
+    <link name="obj_link">
         <visual>
-            <origin rpy="0 0 0" xyz="0.0 ${obj_length/2} 0.0"/>
+            <origin rpy="0 0 0" xyz="0.0 ${obj_length/2.0} 0.0"/>
             <geometry>
                 <box size="0.05 ${obj_length} 0.05"/>
             </geometry>
             <material name="LightGreen"/>
         </visual>
         <collision>
-            <origin rpy="0 0 0" xyz="0.0 ${obj_length/2} 0.0"/>
+            <origin rpy="0 0 0" xyz="0.0 ${obj_length/2.0} 0.0"/>
             <geometry>
                 <box size="0.05 ${obj_length} 0.05"/>
             </geometry>
         </collision>
         <inertial>
-            <origin rpy="0 0 0" xyz="0.0 ${obj_length/2} 0.0"/>
+            <origin rpy="0 0 0" xyz="0.0 ${obj_length/2.0} 0.0"/>
             <mass value="${obj_mass}"/>
             <inertia ixx=".0021" ixy="0" ixz="0" iyy=".00021" iyz="0" izz=".0021"/>
         </inertial>
     </link>
 
-    <gazebo>
+    <!-- <gazebo>
         <joint name="wrist_3_to_obj_joint_l" type="fixed">
-            <parent>wrist_3_link_l</parent>
-            <child>obj</child>
-            <pose>0 ${obj_length + wrist_3_length} 0 0 0 0</pose>
+            <parent>${prefix}wrist_3_link_l</parent>
+            <child>obj_link</child>
+            <pose>0 ${obj_length} 0 0 0 0</pose>
             <physics>
                 <ode>
                     <implicit_spring_damper>1</implicit_spring_damper>
@@ -633,7 +628,63 @@
                 </ode>
             </physics>
         </joint>
+    </gazebo> -->
+
+    <!-- The ft_sensor plugin -->
+    <gazebo reference="wrist_3_to_obj_joint_r">
+        <provideFeedback>true</provideFeedback>
     </gazebo>
+    <gazebo>
+        <plugin name="ft_sensor_obj_joint_r" filename="libgazebo_ros_ft_sensor.so">
+            <updateRate>100.0</updateRate>
+            <topicName>ft_sensor_topic_obj</topicName>
+            <jointName>wrist_3_to_obj_joint_r</jointName>
+        </plugin>
+    </gazebo>
+    <gazebo reference="${prefix}wrist_3_joint_r">
+        <provideFeedback>true</provideFeedback>
+    </gazebo>
+    <gazebo>
+        <plugin name="ft_sensor_wrist_r" filename="libgazebo_ros_ft_sensor.so">
+            <updateRate>100.0</updateRate>
+            <topicName>ft_sensor_topic_wrist_r</topicName>
+            <jointName>${prefix}wrist_3_joint_r</jointName>
+        </plugin>
+    </gazebo>
+
+
+
+    <!-- <gazebo reference="${prefix}wrist_3_joint_l">
+        <provideFeedback>true</provideFeedback>
+    </gazebo>
+    <gazebo>
+        <plugin name="ft_sensor_l" filename="libgazebo_ros_ft_sensor.so">
+            <updateRate>100.0</updateRate>
+            <topicName>ft_sensor_topic_l</topicName>
+            <jointName>${prefix}wrist_3_joint_l</jointName>
+        </plugin>
+    </gazebo> -->
+
+    <!-- <gazebo reference="wrist_3_to_obj_joint_r">
+        <provideFeedback>true</provideFeedback>
+    </gazebo>
+    <gazebo>
+        <plugin name="ft_sensor_r" filename="libgazebo_ros_ft_sensor.so">
+            <updateRate>100.0</updateRate>
+            <topicName>ft_sensor_topic_r</topicName>
+            <jointName>wrist_3_to_obj_joint_r</jointName>
+        </plugin>
+    </gazebo>
+    <gazebo reference="${prefix}wrist_3_joint_l">
+        <provideFeedback>true</provideFeedback>
+    </gazebo>
+    <gazebo>
+        <plugin name="ft_sensor_l" filename="libgazebo_ros_ft_sensor.so">
+            <updateRate>100.0</updateRate>
+            <topicName>ft_sensor_topic_l</topicName>
+            <jointName>${prefix}wrist_3_joint_l</jointName>
+        </plugin>
+    </gazebo> -->
 
   </xacro:macro>
 </robot>
