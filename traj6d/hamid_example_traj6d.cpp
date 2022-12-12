@@ -10,7 +10,7 @@ int main(){
   traj_gen::quintic_traj traj;
 
   double t0, t1, t2, t_end, dt, wrist_3_length, obj_length, objCOMinWrist3_r,
-  initialPoseOfWrist3_y, offsetAlongLocalYaxis;
+  initPoseOfRightWrist3[3], finalPoseOfRightWrist3[3], offsetAlongLocalYaxis;
   Eigen::Vector3d w0, wf, dw0, dwf;
   Eigen::Vector3d p0, v0, a0, pf, vf, af;
   Eigen::Vector3d w, dw, p, v, a;
@@ -35,39 +35,45 @@ int main(){
   // Note: generalized postion of object is defined according to 'wrist_3_link_r' link:
   wrist_3_length = 0.0823;  // based on 'ur5.urdf.xacro'
   obj_length = 0.2174;  // based on 'ur5.urdf.xacro'
-  objCOMinWrist3_r = obj_length / 2 + wrist_3_length;  // length along 'wrist_3_link_r' y-axis
+  objCOMinWrist3_r = obj_length / 4 + wrist_3_length;  // length along 'wrist_3_link_r' y-axis
 
-
-
-  initialPoseOfWrist3_y = -.191;  // TODO: uncomment for 'wrist_3_link_r'
   offsetAlongLocalYaxis = objCOMinWrist3_r;  // TODO: uncommment when object is added to 'wrist_3_link_r', SINGLE and BIMANUAL scenarios.
   // offsetAlongLocalYaxis = 0;  // TODO: uncommment when object is removed from 'wrist_3_link_r', SINGLE right ur5
 
   // initialPoseOfWrist3_y = .191;  // TODO: uncomment for 'wrist_3_link_l', SINGLE left ur5
   // offsetAlongLocalYaxis = 0;  // TODO: uncommment for 'wrist_3_link_l', SINGLE left ur5
 
-  p0 << .552, initialPoseOfWrist3_y + offsetAlongLocalYaxis, .166;  // initial linear position of object (x, y, z), according to 'wrist_3_link'
-  pf << .552, initialPoseOfWrist3_y + offsetAlongLocalYaxis, .166;  // final linear position
 
+
+
+  //// initial linear position of 'wrist_3_link_r' frame in world frame:
+  initPoseOfRightWrist3[0] = .552;  // x0
+  initPoseOfRightWrist3[1] = -.191;  // y0
+  initPoseOfRightWrist3[2] = .166;  // z0
+  //// final linear position of 'wrist_3_link_r' frame (x, y, z) in world frame:
+  finalPoseOfRightWrist3[0] = .552;  //xf
+  finalPoseOfRightWrist3[1] = -.191 - .2;  // yf
+  finalPoseOfRightWrist3[2] = .166;  // zf
+
+  //// Note #1: the euler order is 'YZX' to change euler angles to quaternions.
+  //// Note #2: object has 'pi' rad initial orientation about 'y-axis' in world frame.
   //// [w, x, y, z]
   Eigen::Quaterniond quat0(0, 0, 1, 0);  // TODO: initial angular position, uncomment for 'wrist_3_link_r',  pi (rad) z-axis
-  // Eigen::Quaterniond quat1(0, 0, 1, 0);  // fixed
-  // Eigen::Quaterniond quat2(0, 0, 1, 0);  // fixed
-  // Eigen::Quaterniond quatf(0, 0, 1, 0);  // fixed
+  Eigen::Quaterniond quat1(0, 0, 1, 0);  // steady
+  Eigen::Quaterniond quat2(0, 0, 1, 0);  // steady
+  Eigen::Quaterniond quatf(0, 0, 1, 0);  // steady
 
-  // Eigen::Quaterniond quat1(0, 0, .9659, -.2588);  // TODO: pi + pi/6 (rad) x-axis
-  // Eigen::Quaterniond quat2(0, 0, .9239, -0.3827);  // TODO: pi + pi/4 (rad) x-axis
-  // Eigen::Quaterniond quatf(0, 0, .866, -0.5);  // TODO: pi + pi/3 (rad) x-axis
+  // Eigen::Quaterniond quat1(0, 0, .9659, .2588);  // TODO: pi/6 (rad) x-axis
+  // Eigen::Quaterniond quat2(0, 0, .866, 0.5);  // TODO: pi/3 (rad) x-axis
+  // Eigen::Quaterniond quatf(0, 0, .707, 0.707);  // TODO: pi/2 (rad) x-axis
 
-  Eigen::Quaterniond quat1(-0.2588, 0, .9659, 0);  // TODO: -pi + pi/6 (rad) y-axis
-  Eigen::Quaterniond quat2(-0.3827, 0, .9239, 0);  // TODO: -pi + pi/4 (rad) y-axis
-  Eigen::Quaterniond quatf(-0.5, 0, .866, 0);  // TODO: -pi + pi/3 (rad) y-axis
+  // Eigen::Quaterniond quat1(-0.2588, 0, .9659, 0);  // TODO: pi + pi/6 (rad) y-axis
+  // Eigen::Quaterniond quat2(-0.3827, 0, .9239, 0);  // TODO: pi + pi/4 (rad) y-axis
+  // Eigen::Quaterniond quatf(-0.5, 0, .866, 0);  // TODO: pi + pi/3 (rad) y-axis
 
-  // Eigen::Quaterniond quat1(0, -0.2588, .9659, 0.);  // TODO: pi + pi/6 (rad) z-axis
-  // Eigen::Quaterniond quat2(0, -0.3827, .9239, 0.);  // TODO: pi + pi/4 (rad) z-axis
-  // Eigen::Quaterniond quatf(0, -0.5, .866, 0.);  // TODO: pi + pi/3 (rad) z-axis
-
-
+  // Eigen::Quaterniond quat1(0, -0.2588, .9659, 0.);  // TODO: pi/6 (rad) z-axis
+  // Eigen::Quaterniond quat2(0, -0.3827, .9239, 0.);  // TODO: pi/4 (rad) z-axis
+  // Eigen::Quaterniond quatf(0, -0.5, .866, 0.);  // TODO: pi/3 (rad) z-axis
 
 
 
@@ -82,6 +88,8 @@ int main(){
 
 
 
+  p0 << initPoseOfRightWrist3[0], initPoseOfRightWrist3[1] + offsetAlongLocalYaxis, initPoseOfRightWrist3[2];
+  pf << finalPoseOfRightWrist3[0], finalPoseOfRightWrist3[1] + offsetAlongLocalYaxis, finalPoseOfRightWrist3[2];
 
   v0.setZero();  // initial linear velocity
   vf.setZero();  // final linear velocity

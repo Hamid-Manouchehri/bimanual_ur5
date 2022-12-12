@@ -3,6 +3,10 @@
 Created on Sat Aug 27 11:20:33 2022
 
 @author: Hamid Manouchehri
+
+- For specifying which arm is right(r) and which one is left(l), imagine
+  yourself on top of the table and your front is toward positive x-axis.
+
 """
 from __future__ import division
 from numpy.linalg import inv, pinv, cond
@@ -31,17 +35,17 @@ time_gaz_pre = 0.
 time_gaz = 0.
 t_end = 4
 g0 = 9.81
-writeHeaderOnceFlag = True
+writeHeaderOnceFlag = True  # Do not touch
 finiteTimeSimFlag = True  # TODO: True: simulate to 't_end', Flase: Infinite time
-""" For specifying which arm is right(r) and which one is left(l), imagine
-yourself on top of the table and your front is toward positive x-axis.
-"""
+minConstraintForce = True  # TODO
+minTangent = False  # TODO
+
 linkName_r = 'wrist_3_link_r'
 linkName_l = 'wrist_3_link_l'
 
 wrist_3_length = 0.0823  # based on 'ur5.urdf.xacro'
 obj_length = .2174  # based on 'ur5.urdf.xacro'
-objCOMinWrist3_r = obj_length / 2 + wrist_3_length
+objCOMinWrist3_r = obj_length / 4 + wrist_3_length
 objCOMinWrist3_l = obj_length + wrist_3_length
 poseOfObjCOMInWrist3Frame_r = np.array([0., objCOMinWrist3_r, 0.])  # (x, y, z)
 poseOfObjCOMInWrist3Frame_l = np.array([0., objCOMinWrist3_l, 0.])
@@ -49,8 +53,6 @@ poseOfTipOfWrist3InWrist3Frame_r = np.array([0., wrist_3_length, 0.])  # (x, y, 
 poseOfTipOfWrist3InWrist3Frame_l = poseOfTipOfWrist3InWrist3Frame_r
 wrist_3_mass = .1879  # based on 'ur5.urdf.xacro'
 mg_wrist_3 = wrist_3_mass * g0
-l_obj_frame_to_wrist3_com = .035 / 2  # based on 'ur5.urdf.xacro'
-l_frame_to_com_wrist3 = wrist_3_length - l_obj_frame_to_wrist3_com  # based on 'ur5.urdf.xacro'
 l_contact_to_com_obj_wrist3 = .0565  # based on 'ur5.urdf.xacro'
 
 workspaceDoF = 6
@@ -62,6 +64,7 @@ qDotCurrent_pre_l = np.zeros(6)
 qctrl_des_prev = np.zeros(doubleArmDoF)  # initial angular position of joints; joints in home configuration have zero angles.
 dqctrl_des_prev = np.zeros(doubleArmDoF)  # initial angular velocity of joints; we usually start from rest
 rightWristFTSensoryData = np.array([0.]*workspaceDoF)
+leftWristFTSensoryData = np.array([0.]*workspaceDoF)
 
 ## 6d trajectory variables:
 index = 0
@@ -81,14 +84,15 @@ k_o = np.array([[1, 0, 0],
 kp_a_lin = 200
 kd_a_lin = kp_a_lin / 5
 
-kp_a_ang = 100
+kp_a_ang = 50
 kd_a_ang = kp_a_ang / 5
 
 
-## dynamic specifications of object:
+## dynamic specifications of object (in world frame):
 obj_mass = .5  # TODO: according to 'ur5.urdf.xacro'
 mg_obj = obj_mass * g0
 M_o = np.eye(workspaceDoF)
+## choose principle axis as coordinate system (fixed frame):
 inertiaTensor = np.array([[.0021, 0, 0],
                           [0, .00021, 0],
                           [0, 0, .0021]])  # TODO: according to 'ur5.urdf.xacro'
@@ -183,20 +187,6 @@ def PubTorqueToGazebo(torqueVec):
     pub_wrist_3_l.publish(torqueVec[11])
 
 
-def EulerToUnitQuaternion_zyx(eulerAngles):
-    """calculate equ(297) of "attitude" paper:"""
-    phi = eulerAngles[0]
-    theta = eulerAngles[1]
-    psy = eulerAngles[2]
-
-    w = np.cos(phi/2)*np.cos(theta/2)*np.cos(psy/2) + np.sin(phi/2)*np.sin(theta/2)*np.sin(psy/2)
-    v1 = -np.cos(phi/2)*np.sin(theta/2)*np.sin(psy/2) + np.cos(theta/2)*np.cos(psy/2)*np.sin(phi/2)
-    v2 = np.cos(phi/2)*np.cos(psy/2)*np.sin(theta/2) + np.sin(phi/2)*np.cos(theta/2)*np.sin(psy/2)
-    v3 = np.cos(phi/2)*np.cos(theta/2)*np.sin(psy/2) - np.sin(phi/2)*np.cos(psy/2)*np.sin(theta/2)
-
-    return np.array([w, v1, v2, v3])
-
-
 def CalcOrientationErrorInQuaternion(currentOrientationInQuat, desOrientationInQuat):
     """Calculate position error in Quaternion based on the paper."""
 
@@ -254,39 +244,34 @@ def CalcGeneralizedVel_ref(currentPose, desPose, desVel, e_o):
     return X_dot_r
 
 
-def IntForceParam_mine(J_r, J_l, G_o_r, G_o_l, S, Mqh, theta, W_lam_i=None):
+def IntForceParam_mine(J_r, J_l, G_o_r, G_o_l, S, Mqh, orientationOfObjInQuat):
     """Minimizing constaint force."""
-    J = np.vstack((J_r, J_l))  # (6*6)
-    k, n = np.shape(J)
-    Sc = np.hstack((np.eye(k), np.zeros((k, n - k))))
+    J_total = np.vstack((J_r, J_l))  # (12*12)
+    k, n = np.shape(J_total)  # 12, 12
+    S_c = np.hstack((np.eye(k), np.zeros((k, n - k))))
 
-    Q, RR = qr(J.T)  # (6*6), (6*6)
-    R = RR[:k, :k]
+    Q_qr, R_qr = qr(J_total.T)  # (12*12), (12*12)
 
-    if W_lam_i is None:
-        W_lam_i = np.eye(R.shape[0])  # I(6*6)
+    if minTangent is True:  # ??????????????????????????????
+        WW = np.diag([1., 1, 2, 1., 1., 10.])
+        Ra = Rotation(orientationOfObjInQuat).T
+        Rb = Rotation(orientationOfObjInQuat).T
 
-    if min_tangent:  # QUES_2: why minimization is on rotation (Ri)?
-        WW = np.diag([1., 10, 2])
-        Ra = Rotation(theta).T
-        Rb = Rotation(theta).T
+        auxa = Ra.T.dot(WW.dot(Ra))
+        auxb = Rb.T.dot(WW.dot(Rb))
 
-        auxa = np.dot(Ra.T, np.dot(WW, Ra))
-        auxb = np.dot(Rb.T, np.dot(WW, Rb))
+        W_lam[:3, :3] = auxa
+        W_lam[3:, 3:] = auxb
 
-        W_lam_i[:3, :3] = auxa
-        W_lam_i[3:, 3:] = auxb
+    else:
+        W_lam = np.eye(R_qr.shape[0])  # I(12*12)
 
-    W_lam = W_lam_i  # (6*6)
+    ## below equ(15), (12*12):
+    W_c = Q_qr.dot(S_c.T.dot(inv(R_qr.T).dot(W_lam.dot(inv(R_qr).dot(S_c.dot(Q_qr.T))))))
 
-    # below equ(15)(6*6):
-    Wc = np.dot(Q, np.dot(Sc.T, np.dot(inv(R.T),
-                                       np.dot(W_lam,
-                                       np.dot(inv(R), np.dot(Sc, Q.T))))))
-
-    # equ(15):
-    W = np.dot(S, np.dot(Wc, S.T))  # (6*6)
-    tau_0 = np.dot(S, np.dot(Wc.T, Mqh))  # (6*6)
+    ## equ(15):
+    W = S.dot(W_c.dot(S.T))  # (12*12)
+    tau_0 = S.dot(W_c.T.dot(Mqh))  # (1*12)
 
     return W, tau_0
 
@@ -306,10 +291,10 @@ def QRDecompose(J):
     return qr_Q, qr_R
 
 
-def CalcPqr(J, Su):
+def CalcPqr(J, S_u):
     qr_Q, qr_R = QRDecompose(J)
 
-    return np.dot(Su, qr_Q.T), qr_Q, qr_R
+    return np.dot(S_u, qr_Q.T), qr_Q, qr_R
 
 
 def InverseDynamic(qCurrent, qDotCurrent, qDDotCurrent, qDes, qDotDes, qDDotDes,
@@ -336,21 +321,24 @@ def InverseDynamic(qCurrent, qDotCurrent, qDDotCurrent, qDes, qDotDes, qDDotDes,
 
     Mqh = M.dot(qDDotDes) + h
 
-    M_bar = M + J_l.T.dot(inv(G_o_l.T).dot(M_o.dot(inv(G_o_l).dot(J_l))))
-    C_barq_des = J_l.T.dot(inv(G_o_l.T).dot(M_o.dot(inv(G_o_l).dot(dJdq_l - Gdotdz_o_l))))
-    h_bar = h + J_l.T.dot(inv(G_o_l.T).dot(h_o))
-    Mqh_bar_des = M_bar.dot(qDDotDes) + C_barq_des + h_bar
+    M_hat = M + J_l.T.dot(inv(G_o_l.T).dot(M_o.dot(inv(G_o_l).dot(J_l))))
+    C_hat_q_des = J_l.T.dot(inv(G_o_l.T).dot(M_o.dot(inv(G_o_l).dot(dJdq_l - Gdotdz_o_l))))
+    h_hat = h + J_l.T.dot(inv(G_o_l.T).dot(h_o))
+    Mqh_hat_des = M_hat.dot(qDDotDes) + C_hat_q_des + h_hat
 
     k, n = J_g.shape  # (6, 12)
-    Su = np.hstack((np.zeros((n - k, k)), np.eye(n - k)))  # below equ(11)
-    Sc = np.hstack((np.eye(k), np.zeros((k, n - k))))
-    P, qr_Q, qr_R = CalcPqr(J_g, Su)
+    S_u = np.hstack((np.zeros((n - k, k)), np.eye(n - k)))  # below equ(11)
+    S_c = np.hstack((np.eye(k), np.zeros((k, n - k))))
+    P, qr_Q, qr_R = CalcPqr(J_g, S_u)
 
     S = np.eye(doubleArmDoF)  # (1*12)
 
-    # W, tau_0 = IntForceParam_mine(J_r, J_l, G_o_r, G_o_l, S, Mqh, z_o[3:]) ????????
-    W = np.eye(S.shape[0])  # (12*12)
-    tau_0 = np.zeros(S.shape[0])  # (1*12)
+    if minConstraintForce is True:
+        W, tau_0 = IntForceParam_mine(J_r, J_l, G_o_r, G_o_l, S, Mqh, z_o[3:])
+
+    else:
+        W = np.eye(S.shape[0])  # (12*12)
+        tau_0 = np.zeros(S.shape[0])  # (1*12)
 
     ## below equ(10):
     w_m_s = np.linalg.matrix_power(sqrtm(W), -1)  # W^(-1/2)
@@ -360,9 +348,9 @@ def InverseDynamic(qCurrent, qDotCurrent, qDDotCurrent, qDes, qDotDes, qDDotDes,
     aux2 = (np.eye(S.shape[0]) - winv.dot(P.dot(S.T))).dot(inv(W))  # null-space term of equ(10)
 
     ## equ(10): inverse dynamics
-    tau = winv.dot(P.dot(Mqh_bar_des)) + aux2.dot(tau_0)
+    tau = winv.dot(P.dot(Mqh_hat_des)) + aux2.dot(tau_0)
 
-    lambda_r = inv(qr_R).dot(Sc.dot(qr_Q.T.dot(Mqh_bar_des-S.T.dot(tau))))
+    lambda_r = inv(qr_R).dot(S_c.dot(qr_Q.T.dot(Mqh_hat_des-S.T.dot(tau))))
     print('lambda_r:', np.round(lambda_r, 3), '\n')
 
     return tau
@@ -525,18 +513,15 @@ def SkewSymMat(inputVector):
     return zeroMat  # (3*3)
 
 
-def MapTFWrist3ToWorld(qCurrent_r):
+def MapTFWrist3ToWorld(loaded_model, qCurrent, linkName, FTsensorWristData):
     """Project measured ft forces in the contact (right end-effector)."""
-    global rightWristFTSensoryData
-
-    # print('wrist sensor:', np.round(rightWristFTSensoryData, 3))
 
     poseOfFTsensorInWrist3 = np.array([0., 0., 0.])
 
     poseOfFT, rotationMatOfFT = \
-        rbdl_methods.CalcGeneralizedPoseOfPoint(loaded_model_r, qCurrent_r,
-                                                linkName_r,
-                                                poseOfFTsensorInWrist3)
+                rbdl_methods.CalcGeneralizedPoseOfPoint(loaded_model, qCurrent,
+                                                        linkName,
+                                                        poseOfFTsensorInWrist3)
 
     A11 = rotationMatOfFT  # (3*3)
     A12 = np.zeros((3, 3))
@@ -548,12 +533,21 @@ def MapTFWrist3ToWorld(qCurrent_r):
     secondRow = np.hstack((A21, A22))  # (3*6)
     T_s_t = np.vstack((firstRow, secondRow))  # (6*6)
 
-    FTinWorld = T_s_t.dot(rightWristFTSensoryData)
+    FTinWorld = T_s_t.dot(FTsensorWristData)
 
-    print('world sensor:', np.round(FTinWorld, 3))
+    if linkName is linkName_r:
+        # print('wrist right sensor:', np.round(FTsensorWristData, 3))
+        print('world right sensor:', np.round(FTinWorld, 3))
+        pass
+
+    elif linkName is linkName_l:
+        # print('wrist left sensor:', np.round(FTsensorWristData, 3))
+        # print('world left sensor:', np.round(FTinWorld, 3))
+        pass
 
 
 def acos_(value):
+    """ to avoid value error 'math domain error' """
     if value > 1:
         return acos(1)
 
@@ -564,23 +558,47 @@ def acos_(value):
         return acos(value)
 
 
-def FTwristSensorCallback_r(ft_data):
-    """Sensor mounted in 'wrist_3_joint_r'. """
-    global rightWristFTSensoryData
+def FTwristSensorCallback_l(ft_data_l):
+    """Sensor mounted in 'wrist_3_joint_l'. """
+    global leftWristFTSensoryData
 
-    wrist_force = ft_data.wrench.force  # [F_x, F_y, F_z] local frame
-    wrist_torque = ft_data.wrench.torque  # [T_x, T_y, T_z] local frame
+    wrist_force = ft_data_l.wrench.force  # [F_x, F_y, F_z] local frame
+    wrist_torque = ft_data_l.wrench.torque  # [T_x, T_y, T_z] local frame
 
     sensorAngleTo_x = acos_(wrist_force.x / (mg_wrist_3 + mg_obj))
     sensorAngleTo_y = acos_(wrist_force.y / (mg_wrist_3 + mg_obj))
     sensorAngleTo_z = acos_(wrist_force.z / (mg_wrist_3 + mg_obj))
 
-    ## remove effect of 'wrist_3_link' mass for force:
+    ## remove effect of 'wrist_3_link_l' mass for force:
     Fobj_x = wrist_force.x - mg_wrist_3*cos(sensorAngleTo_x)
     Fobj_y = wrist_force.y - mg_wrist_3*cos(sensorAngleTo_y)
     Fobj_z = wrist_force.z - mg_wrist_3*cos(sensorAngleTo_z)
 
-    ## remove effect of wrist_3 torque:
+    ## remove effect of 'wrist_3_link_l' torque:
+    Tobj_x = wrist_torque.x - wrist_3_length*mg_obj*cos(sensorAngleTo_z)
+    Tobj_y = wrist_torque.y
+    Tobj_z = wrist_torque.z - wrist_3_length*mg_obj*cos(sensorAngleTo_x)
+
+    leftWristFTSensoryData = np.array([Fobj_x, Fobj_y, Fobj_z, Tobj_x, Tobj_y, Tobj_z])
+
+
+def FTwristSensorCallback_r(ft_data_r):
+    """Sensor mounted in 'wrist_3_joint_r'. """
+    global rightWristFTSensoryData
+
+    wrist_force = ft_data_r.wrench.force  # [F_x, F_y, F_z] local frame
+    wrist_torque = ft_data_r.wrench.torque  # [T_x, T_y, T_z] local frame
+
+    sensorAngleTo_x = acos_(wrist_force.x / (mg_wrist_3 + mg_obj))
+    sensorAngleTo_y = acos_(wrist_force.y / (mg_wrist_3 + mg_obj))
+    sensorAngleTo_z = acos_(wrist_force.z / (mg_wrist_3 + mg_obj))
+
+    ## remove effect of 'wrist_3_link_r' mass for force:
+    Fobj_x = wrist_force.x - mg_wrist_3*cos(sensorAngleTo_x)
+    Fobj_y = wrist_force.y - mg_wrist_3*cos(sensorAngleTo_y)
+    Fobj_z = wrist_force.z - mg_wrist_3*cos(sensorAngleTo_z)
+
+    ## remove effect of 'wrist_3_link_r' torque:
     Tobj_x = wrist_torque.x - wrist_3_length*(mg_wrist_3 + mg_obj)*cos(sensorAngleTo_z)
     Tobj_y = wrist_torque.y
     Tobj_z = wrist_torque.z + wrist_3_length*(mg_wrist_3 + mg_obj)*cos(sensorAngleTo_x)
@@ -589,11 +607,10 @@ def FTwristSensorCallback_r(ft_data):
     # Tobj_z = wrist_torque.z + wrist_3_length*mg_obj*cos(sensorAngleTo_x)
 
     rightWristFTSensoryData = np.array([Fobj_x, Fobj_y, Fobj_z, Tobj_x, Tobj_y, Tobj_z])
-    # print('wrist sensor:', np.round(rightWristFTSensoryData, 3))
 
 
 def PositinoControl(q, qDot, qDDot):
-
+    """ Control position conntrol for testing coordinations"""
     k_p = 700
     k_v = 40
 
@@ -723,7 +740,8 @@ def JointStatesCallback(data):
     """
     Subscribe to robot's joints' position and velocity and publish torques.
     """
-    global qDotCurrent_pre_r, qDotCurrent_pre_l, dt, time_gaz, time_gaz_pre
+    global qDotCurrent_pre_r, qDotCurrent_pre_l, dt, time_gaz, time_gaz_pre, \
+           rightWristFTSensoryData, leftWristFTSensoryData
 
     ## Terminate the node after 't_end' seconds of simulation:
     if time_gaz >= t_end and finiteTimeSimFlag:
@@ -782,7 +800,8 @@ def JointStatesCallback(data):
 
     qDDotCurrent = np.concatenate((qDDotCurrent_r, qDDotCurrent_l))
 
-    MapTFWrist3ToWorld(qCurrent_r)  # uncomment '/ft_sensor_topic_wrist3_r' subscriber
+    MapTFWrist3ToWorld(loaded_model_r, qCurrent_r, linkName_r, rightWristFTSensoryData)  # uncomment '/ft_sensor_topic_wrist3_r' subscriber
+    MapTFWrist3ToWorld(loaded_model_l, qCurrent_l, linkName_l, leftWristFTSensoryData)  # uncomment '/ft_sensor_topic_wrist3_l' subscriber
 
     poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
                                               IterateThroughTraj6dData(time_gaz)
@@ -841,7 +860,9 @@ if __name__ == '__main__':
         ReadTrajData()  # read entire 'trajDataFile' file and store it in global variables.
         rospy.Subscriber("/joint_states", JointState, JointStatesCallback)
         rospy.Subscriber("/ft_sensor_topic_wrist3_r", WrenchStamped, FTwristSensorCallback_r)
+        rospy.Subscriber("/ft_sensor_topic_wrist3_l", WrenchStamped, FTwristSensorCallback_l)
         rospy.spin()
 
     except rospy.ROSInterruptException:
         pass
+    

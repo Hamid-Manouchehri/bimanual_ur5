@@ -658,5 +658,16 @@
         </plugin>
     </gazebo>
 
+    <gazebo reference="${prefix}wrist_3_joint_l">
+        <provideFeedback>true</provideFeedback>
+    </gazebo>
+    <gazebo>
+        <plugin name="ft_sensor_wrist3_l" filename="libgazebo_ros_ft_sensor.so">
+            <updateRate>100.0</updateRate>
+            <topicName>ft_sensor_topic_wrist3_l</topicName>
+            <jointName>${prefix}wrist_3_joint_l</jointName>
+        </plugin>
+    </gazebo>
+
   </xacro:macro>
 </robot>
