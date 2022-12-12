@@ -28,9 +28,9 @@ int main(){
 
 
   t0 = 0;
-  t1 = .75;  // TODO: via time for 'quat1'
-  t2 = 1.5;  // TODO: via time for 'quat2'
-  t_end = 2;  // TODO: must be same as 't_end' of main simulation node.
+  t1 = 1.5;  // TODO: via time for 'quat1'
+  t2 = 3;  // TODO: via time for 'quat2'
+  t_end = 4;  // TODO: must be same as 't_end' of main simulation node.
 
   // Note: generalized postion of object is defined according to 'wrist_3_link_r' link:
   wrist_3_length = 0.0823;  // based on 'ur5.urdf.xacro'
@@ -59,13 +59,13 @@ int main(){
   // Eigen::Quaterniond quat2(0, 0, .9239, -0.3827);  // TODO: pi + pi/4 (rad) x-axis
   // Eigen::Quaterniond quatf(0, 0, .866, -0.5);  // TODO: pi + pi/3 (rad) x-axis
 
-  // Eigen::Quaterniond quat1(-0.2588, 0, .9659, 0);  // TODO: pi + pi/6 (rad) y-axis
-  // Eigen::Quaterniond quat2(-0.3827, 0, .9239, 0);  // TODO: pi + pi/4 (rad) y-axis
-  // Eigen::Quaterniond quatf(-0.5, 0, .866, 0);  // TODO: pi + pi/3 (rad) y-axis
+  Eigen::Quaterniond quat1(-0.2588, 0, .9659, 0);  // TODO: -pi + pi/6 (rad) y-axis
+  Eigen::Quaterniond quat2(-0.3827, 0, .9239, 0);  // TODO: -pi + pi/4 (rad) y-axis
+  Eigen::Quaterniond quatf(-0.5, 0, .866, 0);  // TODO: -pi + pi/3 (rad) y-axis
 
-  Eigen::Quaterniond quat1(0, -0.2588, .9659, 0.);  // TODO: pi + pi/6 (rad) z-axis
-  Eigen::Quaterniond quat2(0, -0.3827, .9239, 0.);  // TODO: pi + pi/4 (rad) z-axis
-  Eigen::Quaterniond quatf(0, -0.5, .866, 0.);  // TODO: pi + pi/3 (rad) z-axis
+  // Eigen::Quaterniond quat1(0, -0.2588, .9659, 0.);  // TODO: pi + pi/6 (rad) z-axis
+  // Eigen::Quaterniond quat2(0, -0.3827, .9239, 0.);  // TODO: pi + pi/4 (rad) z-axis
+  // Eigen::Quaterniond quatf(0, -0.5, .866, 0.);  // TODO: pi + pi/3 (rad) z-axis
 
 
 

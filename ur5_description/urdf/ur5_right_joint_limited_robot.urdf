@@ -228,10 +228,13 @@
       <inertia ixx="0.0171364731454" ixy="0.0" ixz="0.0" iyy="0.0171364731454" iyz="0.0" izz="0.033822"/>
     </inertial>
   </link>
-  <!-- <joint name="wrist_3_to_obj_joint_r" type="fixed">
-      <origin rpy="0 0 0" xyz="0 .0823 0"/>
-      <parent link="wrist_3_link_r"/>
-      <child link="obj"/>
+  <!-- <joint name="wrist3_obj_joint_r" type="revolute">
+    <parent link="wrist_3_link_r" />
+    <child link = "obj" />
+    <origin rpy="0 0 0" xyz="0 .0823 0"/>
+    <axis xyz="0 1 0" />
+    <limit lower="0." upper="0." effort="0." velocity="0."/>
+    <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <link name="obj">
       <visual>

@@ -595,7 +595,19 @@
         <parent link="${prefix}wrist_3_link_r"/>
         <child link="obj"/>
     </joint>
-
+    <!-- <joint name="${prefix}wrist3_obj_joint_r" type="revolute">
+      <parent link="${prefix}wrist_3_link_r" />
+      <child link = "obj" />
+      <origin rpy="0 0 0" xyz="0 ${wrist_3_length} 0"/>
+      <axis xyz="0 1 0" />
+      <xacro:unless value="${joint_limited}">
+        <limit lower="0." upper="0." effort="0." velocity="0."/>
+      </xacro:unless>
+      <xacro:if value="${joint_limited}">
+        <limit lower="0." upper="0." effort="0." velocity="0."/>
+      </xacro:if>
+      <dynamics damping="0.0" friction="0.0"/>
+    </joint> -->
     <link name="obj">
         <visual>
             <origin rpy="0 0 0" xyz="0.0 ${obj_length/2} 0.0"/>
@@ -633,6 +645,17 @@
                 </ode>
             </physics>
         </joint>
+    </gazebo>
+
+    <gazebo reference="${prefix}wrist_3_joint_r">
+        <provideFeedback>true</provideFeedback>
+    </gazebo>
+    <gazebo>
+        <plugin name="ft_sensor_wrist3_r" filename="libgazebo_ros_ft_sensor.so">
+            <updateRate>100.0</updateRate>
+            <topicName>ft_sensor_topic_wrist3_r</topicName>
+            <jointName>${prefix}wrist_3_joint_r</jointName>
+        </plugin>
     </gazebo>
 
   </xacro:macro>
