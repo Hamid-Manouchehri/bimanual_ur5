@@ -47,11 +47,11 @@ def CalcGeneralizedPoseOfPoint(model, q, linkName, pointLocal):
     poseOfPoint = rbdl.CalcBodyToBaseCoordinates(model, q,
                                                  model.GetBodyId(linkName),
                                                  pointLocal)  # (1*3)
-    rotationMatOfPoint = \
+    rotationMatOfBody = \
                     rbdl.CalcBodyWorldOrientation(model, q,
                                                   model.GetBodyId(linkName))
 
-    return poseOfPoint, rotationMatOfPoint
+    return poseOfPoint, rotationMatOfBody
 
 
 def Jacobian(model, q, linkName, pointLocal):

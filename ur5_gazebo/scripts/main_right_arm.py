@@ -8,7 +8,7 @@ from __future__ import division
 
 from numpy.linalg import inv, pinv, cond
 from scipy.linalg import qr, sqrtm
-from math import sin, cos, sqrt
+from math import sin, cos, sqrt, acos
 import rbdl
 import os
 import csv
@@ -16,6 +16,7 @@ import time
 import rospy
 from std_msgs.msg import Float64
 from sensor_msgs.msg import JointState
+from geometry_msgs.msg import WrenchStamped
 import pyquaternion as qt
 from scipy.spatial.transform import Rotation as R
 import numpy as np
@@ -30,7 +31,7 @@ time_ = 0
 dt = 0.
 time_gaz_pre = 0.
 time_gaz = 0.
-t_end = 3
+t_end = 4
 g0 = 9.81
 writeHeaderOnceFlag = True
 finiteTimeSimFlag = False  # TODO: True: simulate to 't_end', Flase: Infinite time
@@ -39,10 +40,12 @@ linkName_r = 'wrist_3_link_r'
 
 wrist_3_length = 0.0823  # based on 'ur5.urdf.xacro'
 obj_length = .2174  # based on 'ur5.urdf.xacro'
-# objCOMinWrist3_r = obj_length / 2 + wrist_3_length  # TODO: uncomment as object is added.
-objCOMinWrist3_r = 0  # TODO: uncomment as object is removed.
-# poseOfObjCOMInWrist3Frame_r = np.array([0., wrist_3_length, 0.])  # (x, y, z)
-poseOfObjCOMInWrist3Frame_r = np.array([0., 0., 0.])  # (x, y, z)
+objCOMinWrist3_r = obj_length / 2 + wrist_3_length  # TODO: uncomment as object is added.
+# objCOMinWrist3_r = 0  # TODO: uncomment as object is removed.
+poseOfObjCOMInWrist3Frame_r = np.array([0., objCOMinWrist3_r, 0.])  # (x, y, z)
+l_contact_to_com_obj_wrist3 = .0565  # based on 'ur5.urdf.xacro'
+wrist_3_mass = .1879  # based on 'ur5.urdf.xacro'
+mg_wrist_3 = wrist_3_mass * g0
 
 workspaceDoF = 6
 singleArmDoF = 6
@@ -61,23 +64,39 @@ k_p_pose = np.array([[1, 0, 0],
 
 k_o = np.array([[1, 0, 0],
                 [0, 1, 0],
-                [0, 0, 1]]) * 40
+                [0, 0, 1]]) * 20
 
 kp_a_lin = 100
 kd_a_lin = kp_a_lin / 5
 
-kp_a_ang = 100
+kp_a_ang = 50
 kd_a_ang = kp_a_ang / 5
 
 
 initialPoseOfObjInWorld_x_r = 0.3922
-initialPoseOfObjInWorld_y_r = -.191   # TODO: uncomment as object is removed
-# initialPoseOfObjInWorld_y_r = -.191 + objCOMinWrist3_r  # = .2415; TODO: uncomment as object is added
+# initialPoseOfObjInWorld_y_r = -.191   # TODO: uncomment as object is removed
+initialPoseOfObjInWorld_y_r = -.191 + objCOMinWrist3_r  # = .2415; TODO: uncomment as object is added
 initialPoseOfObjInWorld_z_r = .609
 
 initialOrientationOfObj_roll_r = 0.
 initialOrientationOfObj_pitch_r = 0.
 initialOrientationOfObj_yaw_r = 0.
+
+
+## dynamic specifications of object (in world frame):
+obj_mass = .5  # TODO: according to 'ur5.urdf.xacro'
+mg_obj = obj_mass * g0
+M_o = np.eye(workspaceDoF)
+
+## choose principle axis as coordinate system (fixed frame):
+inertiaTensor = np.array([[.0021, 0, 0],
+                          [0, .00021, 0],
+                          [0, 0, .0021]])  # TODO: according to 'ur5.urdf.xacro'
+M_o[:3, :3] = M_o[:3, :3]*obj_mass
+M_o[3:, 3:] = inertiaTensor
+
+## definition of vector of generalized Centripetal, Coriolis, and Gravity forces:
+h_o = np.array([0., 0., -mg_obj, 0., 0., 0.])
 
 
 pathToCSVFile = config.bimanual_ur5_dic['CSVFileDirectory']
@@ -217,12 +236,11 @@ def CalcGeneralizedVel_ref(currentPose, desPose, desVel, e_o):
 
 def PositinoControl(q_r, qDot_r, qDDot_r):
 
-    k_p = 700
-    k_v = 40
+    k_p = 500
+    k_v = 30
 
     ## joints: [shoulder_pan, shoulder_lift, elbow, wrist_1, wrist_2, wrist_3]
-    qDes_r = np.array([0., 0.0, 0, 0, 0., 0.])  # TODO
-    print(np.round(q_r, 3))
+    qDes_r = np.array([0., 0., 0., 0., 0., 0.])  # TODO
     qDotDes_r = np.zeros(singleArmDoF)
     qDDotDes_r = np.zeros(singleArmDoF)
 
@@ -333,13 +351,24 @@ def Task2Joint(qCurrent_r, qDotCurrent_r, qDDotCurrent_r, poseDesTraj, velDesTra
 
     jac = rbdl_methods.Jacobian(loaded_model_r, qCurrent_r, linkName_r,
                                 poseOfObjCOMInWrist3Frame_r)
-    print(cond(jac))
 
     qDDotDes = pinv(jac).dot(accelDesTraj - dJdq)  # equ(21)
 
     qDes, qDotDes = TrajEstimate(qDDotDes)
 
     return qDes, qDotDes, qDDotDes
+
+
+def SkewSymMat(inputVector):
+    """Compute the corresponding skew symetric matrix of 'inputVector' vector."""
+    inputVector = np.array([inputVector])
+    zeroMat = np.zeros((3, 3))
+    zeroMat[0, 1] = -inputVector[0, 2]
+    zeroMat[0, 2] = inputVector[0, 1]
+    zeroMat[1, 2] = -inputVector[0, 0]
+    zeroMat = zeroMat + (-zeroMat.T)
+
+    return zeroMat  # (3*3)
 
 
 def IterateThroughTraj6dData(gaz_time):
@@ -389,6 +418,72 @@ def TrajectoryGeneration(r, t):
 
     return poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes
 
+def acos_(value):
+    """ to avoid value error 'math domain error' """
+    if value > 1:
+        return acos(1)
+
+    elif value < -1:
+        return acos(-1)
+
+    else:
+        return acos(value)
+
+
+def FTwristSensorCallback_r(ft_data_r):
+    """Sensor mounted in 'wrist_3_joint_r'. """
+    global rightContactFTSensoryData, sensorData_r, omega_x, omega_z
+
+    wrist_force = ft_data_r.wrench.force  # [F_x, F_y, F_z] local frame
+    wrist_torque = ft_data_r.wrench.torque  # [T_x, T_y, T_z] local frame
+
+    sensorData_r = np.array([wrist_force.x, wrist_force.y, wrist_force.z,
+                             wrist_torque.x, wrist_torque.y, wrist_torque.z])
+
+    sensorAngleTo_x = acos_(wrist_force.x / (mg_wrist_3 + mg_obj))
+    sensorAngleTo_y = acos_(wrist_force.y / (mg_wrist_3 + mg_obj))
+    sensorAngleTo_z = acos_(wrist_force.z / (mg_wrist_3 + mg_obj))
+
+    ## remove effect of 'wrist_3_link_r' mass for force:
+    Fobj_x = wrist_force.x - mg_wrist_3*cos(sensorAngleTo_x)
+    Fobj_y = wrist_force.y - mg_wrist_3*cos(sensorAngleTo_y)
+    Fobj_z = wrist_force.z - mg_wrist_3*cos(sensorAngleTo_z)
+
+    ## remove effect of 'wrist_3_link_r' torque:
+    Tobj_x = wrist_torque.x - wrist_3_length*(mg_wrist_3 + mg_obj)*cos(sensorAngleTo_z) - l_contact_to_com_obj_wrist3*mg_wrist_3*cos(sensorAngleTo_z)
+    Tobj_y = wrist_torque.y
+    Tobj_z = wrist_torque.z + wrist_3_length*(mg_wrist_3 + mg_obj)*cos(sensorAngleTo_x) + l_contact_to_com_obj_wrist3*mg_wrist_3*cos(sensorAngleTo_x)
+
+    rightContactFTSensoryData = np.array([Fobj_x, Fobj_y, Fobj_z, Tobj_x, Tobj_y, Tobj_z])
+
+
+def MapFTContactToWorld(loaded_model, qCurrent, linkName, FTsensorWristData):
+    """Project measured ft forces in the contact (right end-effector)."""
+
+    poseOfFTsensorInWrist3 = np.array([0., wrist_3_length, 0.])
+
+    poseOfFT, rotationMatOfFT = \
+                rbdl_methods.CalcGeneralizedPoseOfPoint(loaded_model, qCurrent,
+                                                        linkName,
+                                                        poseOfFTsensorInWrist3)
+
+    A11 = rotationMatOfFT  # (3*3)
+    A12 = np.zeros((3, 3))
+    skewSymOfP_s_t = SkewSymMat(poseOfFT)  # (3*3)
+    A21 = skewSymOfP_s_t.dot(rotationMatOfFT)  # (3*3)
+    A22 = rotationMatOfFT
+
+    firstRow = np.hstack((A11, A12))  # (3*6)
+    secondRow = np.hstack((A21, A22))  # (3*6)
+    T_s_t = np.vstack((firstRow, secondRow))  # (6*6)
+
+    FTinWorld = T_s_t.dot(FTsensorWristData)  # (1*6)
+
+    print('FT in Contact:', np.round(FTsensorWristData, 3))
+    print('FT in World:', np.round(FTinWorld, 3))
+    print('FT in Wrist:', np.round(sensorData_r, 3), '\n')
+
+
 
 def JointStatesCallback(data):
     """
@@ -433,6 +528,8 @@ def JointStatesCallback(data):
 
     # qDDotCurrent_r = (qDotCurrent_r - qDotCurrent_pre_r) / dt
     # qDotCurrent_pre_r = qDotCurrent_r
+
+    MapFTContactToWorld(loaded_model_r, qCurrent_r, linkName_r, rightContactFTSensoryData)  # uncomment '/ft_sensor_topic_wrist3_r' subscriber
 
     poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
                                               IterateThroughTraj6dData(time_gaz)
@@ -499,6 +596,7 @@ if __name__ == '__main__':
     try:
         ReadTrajData()  # read entire 'trajDataFile' file and store it in global variables.
         rospy.Subscriber("/joint_states", JointState, JointStatesCallback)
+        rospy.Subscriber("/ft_sensor_topic_wrist3_r", WrenchStamped, FTwristSensorCallback_r)
         rospy.spin()
 
     except rospy.ROSInterruptException:
