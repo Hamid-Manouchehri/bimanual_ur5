@@ -18,9 +18,9 @@ int main(){
   std::vector<double> t_via, eulerToQuat0, eulerToQuatf, eulerToQuat1, eulerToQuat2;
   std::vector<Eigen::Quaterniond> quat_via;
 
-  // std::string dataFileName = "trajectory_data_right.txt";  // TODO: uncomment for 'main_right_arm.py'.
+  // std::string dataFileName = "trajectory_data_bimanual.txt";  // TODO: uncomment for 'main_bimanual.py'.
+  std::string dataFileName = "trajectory_data_right.txt";  // TODO: uncomment for 'main_right_arm.py'.
   // std::string dataFileName = "trajectory_data_left.txt";  // TODO: uncomment for 'main_left_arm.py'.
-  std::string dataFileName = "trajectory_data_bimanual.txt";  // TODO: uncomment for 'main_bimanual.py'.
 
   dt = 0.001;
 
@@ -32,10 +32,10 @@ int main(){
   t2 = 3;  // TODO: via time for 'quat2'
   t_end = 4;  // TODO: must be same as 't_end' of main simulation node.
 
-  // Note: generalized postion of object is defined according to 'wrist_3_link_r' link:
+  //// Note: generalized postion of object is defined according to 'wrist_3_link_r' link:
   wrist_3_length = 0.0823;  // based on 'ur5.urdf.xacro'
   obj_length = 0.2174;  // based on 'ur5.urdf.xacro'
-  objCOMinWrist3_r = obj_length / 4 + wrist_3_length;  // length along 'wrist_3_link_r' y-axis
+  objCOMinWrist3_r = obj_length / 2 + wrist_3_length;  // length along 'wrist_3_link_r' y-axis
 
   offsetAlongLocalYaxis = objCOMinWrist3_r;  // TODO: uncommment when object is added to 'wrist_3_link_r', SINGLE and BIMANUAL scenarios.
   // offsetAlongLocalYaxis = 0;  // TODO: uncommment when object is removed from 'wrist_3_link_r', SINGLE right ur5
@@ -47,25 +47,25 @@ int main(){
 
 
   //// initial linear position of 'wrist_3_link_r' frame in world frame:
-  initPoseOfRightWrist3[0] = .552;  // x0
-  initPoseOfRightWrist3[1] = -.191;  // y0
-  initPoseOfRightWrist3[2] = .166;  // z0
+  initPoseOfRightWrist3[0] = .552;  // x_i
+  initPoseOfRightWrist3[1] = -.191;  // y_i
+  initPoseOfRightWrist3[2] = .166;  // z_i
   //// final linear position of 'wrist_3_link_r' frame (x, y, z) in world frame:
-  finalPoseOfRightWrist3[0] = .552;  //xf
-  finalPoseOfRightWrist3[1] = -.191 - .2;  // yf
-  finalPoseOfRightWrist3[2] = .166;  // zf
+  finalPoseOfRightWrist3[0] = initPoseOfRightWrist3[0] - .1;  //x_f
+  finalPoseOfRightWrist3[1] = initPoseOfRightWrist3[1] + .2;  // y_f
+  finalPoseOfRightWrist3[2] = initPoseOfRightWrist3[2] - .1;  // z_f
 
   //// Note #1: the euler order is 'YZX' to change euler angles to quaternions.
   //// Note #2: object has 'pi' rad initial orientation about 'y-axis' in world frame.
   //// [w, x, y, z]
   Eigen::Quaterniond quat0(0, 0, 1, 0);  // TODO: initial angular position, uncomment for 'wrist_3_link_r',  pi (rad) z-axis
-  Eigen::Quaterniond quat1(0, 0, 1, 0);  // steady
-  Eigen::Quaterniond quat2(0, 0, 1, 0);  // steady
-  Eigen::Quaterniond quatf(0, 0, 1, 0);  // steady
+  // Eigen::Quaterniond quat1(0, 0, 1, 0);  // steady
+  // Eigen::Quaterniond quat2(0, 0, 1, 0);  // steady
+  // Eigen::Quaterniond quatf(0, 0, 1, 0);  // steady
 
-  // Eigen::Quaterniond quat1(0, 0, .9659, .2588);  // TODO: pi/6 (rad) x-axis
-  // Eigen::Quaterniond quat2(0, 0, .866, 0.5);  // TODO: pi/3 (rad) x-axis
-  // Eigen::Quaterniond quatf(0, 0, .707, 0.707);  // TODO: pi/2 (rad) x-axis
+  Eigen::Quaterniond quat1(0, 0, .9659, -.2588);  // TODO: pi/6 (rad) x-axis
+  Eigen::Quaterniond quat2(0, 0, .866, -0.5);  // TODO: pi/3 (rad) x-axis
+  Eigen::Quaterniond quatf(0, 0, .707, -0.707);  // TODO: pi/2 (rad) x-axis
 
   // Eigen::Quaterniond quat1(-0.2588, 0, .9659, 0);  // TODO: pi + pi/6 (rad) y-axis
   // Eigen::Quaterniond quat2(-0.3827, 0, .9239, 0);  // TODO: pi + pi/4 (rad) y-axis

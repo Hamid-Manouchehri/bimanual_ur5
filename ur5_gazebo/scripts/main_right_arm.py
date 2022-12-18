@@ -5,7 +5,6 @@ Created on Sat Aug 27 11:20:33 2022
 @author: Hamid Manouchehri
 """
 from __future__ import division
-
 from numpy.linalg import inv, pinv, cond
 from scipy.linalg import qr, sqrtm
 from math import sin, cos, sqrt, acos
@@ -35,26 +34,19 @@ t_end = 4
 g0 = 9.81
 writeHeaderOnceFlag = True
 finiteTimeSimFlag = False  # TODO: True: simulate to 't_end', Flase: Infinite time
+
 wrist_3_length = 0.0823  # based on 'ur5.urdf.xacro'
 obj_length = .2174  # based on 'ur5.urdf.xacro'
-obj_mass = 1.0  # based on 'ur5.urdf.xacro'
-mg_obj = obj_mass * g0
 wrist_3_mass = .1879  # based on 'ur5.urdf.xacro'
 mg_wrist_3 = wrist_3_mass * g0
 l_obj_frame_to_wrist3_com = .035 / 2  # based on 'ur5.urdf.xacro'
 l_frame_to_com_wrist3 = wrist_3_length - l_obj_frame_to_wrist3_com  # based on 'ur5.urdf.xacro'
 l_frame_to_com_obj = .1087  # based on 'ur5.urdf.xacro'
-
-linkName_r = 'wrist_3_link_r'
-
-wrist_3_length = 0.0823  # based on 'ur5.urdf.xacro'
-obj_length = .2174  # based on 'ur5.urdf.xacro'
 objCOMinWrist3_r = obj_length / 2 + wrist_3_length  # TODO: uncomment as object is added.
-# objCOMinWrist3_r = 0  # TODO: uncomment as object is removed.
 poseOfObjCOMInWrist3Frame_r = np.array([0., objCOMinWrist3_r, 0.])  # (x, y, z)
 l_contact_to_com_obj_wrist3 = .0565  # based on 'ur5.urdf.xacro'
-wrist_3_mass = .1879  # based on 'ur5.urdf.xacro'
-mg_wrist_3 = wrist_3_mass * g0
+
+linkName_r = 'wrist_3_link_r'
 
 workspaceDoF = 6
 singleArmDoF = 6
@@ -76,7 +68,7 @@ k_o = np.array([[1, 0, 0],
                 [0, 1, 0],
                 [0, 0, 1]]) * 20
 
-kp_a_lin = 300
+kp_a_lin = 100
 kd_a_lin = kp_a_lin / 5
 
 kp_a_ang = 50
@@ -430,6 +422,7 @@ def TrajectoryGeneration(r, t):
 
     return poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes
 
+
 def acos_(value):
     """ to avoid value error 'math domain error' """
     if value > 1:
@@ -554,57 +547,12 @@ def JointStatesCallback(data):
                                                           velTrajectoryDes,
                                                           accelTrajectoryDes)
 
-    # jointTau = InverseDynamic(qCurrent_r, qDotCurrent_r, qDDotCurrent_r,
-    #                           jointPoseDes, jointVelDes, jointAccelDes)
+    jointTau = InverseDynamic(qCurrent_r, qDotCurrent_r, qDDotCurrent_r,
+                              jointPoseDes, jointVelDes, jointAccelDes)
 
-    jointTau = PositinoControl(qCurrent_r, qDotCurrent_r, qDDotCurrent_r)
+    # jointTau = PositinoControl(qCurrent_r, qDotCurrent_r, qDDotCurrent_r)
 
     PubTorqueToGazebo(jointTau)
-
-
-def FTwristSensorCallback_r(ft_data):
-    """Sensor mounted in 'wrist_3_joint_r'. """
-    global rightWristFTSensoryData
-
-    wrist_force = ft_data.wrench.force  # [F_x, F_y, F_z] local frame
-    wrist_torque = ft_data.wrench.torque  # [T_x, T_y, T_z] local frame
-
-    rightWristFTSensoryData = \
-                    np.array([wrist_force.x, wrist_force.y, wrist_force.z,
-                              wrist_torque.x, wrist_torque.y, wrist_torque.z],
-                              dtype=float)
-
-    sensorAngleTo_x = acos(wrist_force.x / (mg_wrist_3 + mg_obj))
-    sensorAngleTo_y = acos(wrist_force.y / (mg_wrist_3 + mg_obj))
-    sensorAngleTo_z = acos(wrist_force.z / (mg_wrist_3 + mg_obj))
-
-    Fobj_x = wrist_force.x - mg_wrist_3*cos(sensorAngleTo_x)
-    Fobj_y = wrist_force.y - mg_wrist_3*cos(sensorAngleTo_y)
-    Fobj_z = wrist_force.z - mg_wrist_3*cos(sensorAngleTo_z)
-
-    ## remove effect of wrist_3 torque:
-    Tobj_x = wrist_torque.x - l_frame_to_com_wrist3*mg_wrist_3*cos(sensorAngleTo_z) -\
-                        l_frame_to_com_wrist3*mg_obj*cos(sensorAngleTo_z) - \
-                        l_obj_frame_to_wrist3_com*mg_obj*cos(sensorAngleTo_z)
-    Tobj_y = wrist_torque.y
-    Tobj_z = wrist_torque.z + l_frame_to_com_wrist3*mg_wrist_3*cos(sensorAngleTo_x) + \
-                        l_frame_to_com_wrist3*mg_obj*cos(sensorAngleTo_x) + \
-                        l_obj_frame_to_wrist3_com*mg_obj*cos(sensorAngleTo_x)
-
-    print('wrist sensor:', np.round([Fobj_x, Fobj_y, Fobj_z, Tobj_x, Tobj_y, Tobj_z], 3))
-
-
-def FTobjSensorCallback_r(ft_data):
-    """Sensor mounted in 'wrist_3_to_obj_joint_r'. """
-
-    wrist_force = ft_data.wrench.force  # [F_x, F_y, F_z] local frame
-    wrist_torque = ft_data.wrench.torque  # [T_x, T_y, T_z] local frame
-
-    objFTSensoryData = np.array([wrist_force.x, wrist_force.y, wrist_force.z,
-                                 wrist_torque.x, wrist_torque.y, wrist_torque.z],
-                                 dtype=float)
-
-    print('obj joint sensor: ', np.round(objFTSensoryData, 3), '\n')
 
 
 def ReadTrajData():
