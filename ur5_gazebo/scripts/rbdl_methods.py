@@ -17,7 +17,7 @@ singleArmDoF = 6
 
 
 def CalcM(model, q):
-    """Compute join-space inertia matrices of arms."""
+    """Compute joint-space inertia matrices of arms."""
 
     M = np.zeros((model.q_size, model.q_size))  # (6*6), for each arm
     rbdl.CompositeRigidBodyAlgorithm(model, q, M, True)
@@ -41,7 +41,7 @@ def CalcH(model, q, qdot):
 def CalcGeneralizedPoseOfPoint(model, q, linkName, pointLocal):
     """
     Calculate generalized position of a point in world frame:
-    Note: both wrists have same position for their tips in local frames.
+    Note: both wrists have same position for their tips in local frames (forward kinematics).
     (poseOfTipOfWrist3InWrist3Frame)
     """
     poseOfPoint = rbdl.CalcBodyToBaseCoordinates(model, q,
@@ -70,7 +70,7 @@ def Jacobian(model, q, linkName, pointLocal):
 def CalcGeneralizedVelOfObject(model, q, qdot, linkName, pointLocal):
     """
     Calculate generalized velocity of the object via the right-hand ...
-    kinematics in base frame.
+    kinematics in base frame (forward kinematics).
     """
     generalizedVelOfObj = rbdl.CalcPointVelocity6D(model, q, qdot,
                                                    model.GetBodyId(linkName),

@@ -30,7 +30,7 @@ time_ = 0
 dt = 0.
 time_gaz_pre = 0.
 time_gaz = 0.
-t_end = 4
+t_end = 3
 g0 = 9.81
 writeHeaderOnceFlag = True
 finiteTimeSimFlag = False  # TODO: True: simulate to 't_end', Flase: Infinite time
@@ -42,7 +42,8 @@ mg_wrist_3 = wrist_3_mass * g0
 l_obj_frame_to_wrist3_com = .035 / 2  # based on 'ur5.urdf.xacro'
 l_frame_to_com_wrist3 = wrist_3_length - l_obj_frame_to_wrist3_com  # based on 'ur5.urdf.xacro'
 l_frame_to_com_obj = .1087  # based on 'ur5.urdf.xacro'
-objCOMinWrist3_r = obj_length / 2 + wrist_3_length  # TODO: uncomment as object is added.
+# objCOMinWrist3_r = obj_length / 2 + wrist_3_length  # TODO: uncomment as object is added.
+objCOMinWrist3_r = 0  # TODO: uncomment as object is removed.
 poseOfObjCOMInWrist3Frame_r = np.array([0., objCOMinWrist3_r, 0.])  # (x, y, z)
 l_contact_to_com_obj_wrist3 = .0565  # based on 'ur5.urdf.xacro'
 
@@ -62,23 +63,23 @@ traj_angularPoseQuat, traj_angularVel, traj_angularAccel = [], [], []
 
 k_p_pose = np.array([[1, 0, 0],
                      [0, 1, 0],
-                     [0, 0, 1]]) * 50
+                     [0, 0, 1]]) * 10
 
 k_o = np.array([[1, 0, 0],
                 [0, 1, 0],
-                [0, 0, 1]]) * 20
+                [0, 0, 1]]) * 5
 
-kp_a_lin = 100
+kp_a_lin = 70
 kd_a_lin = kp_a_lin / 5
 
-kp_a_ang = 50
+kp_a_ang = 35
 kd_a_ang = kp_a_ang / 5
 
 
-initialPoseOfObjInWorld_x_r = 0.3922
-# initialPoseOfObjInWorld_y_r = -.191   # TODO: uncomment as object is removed
-initialPoseOfObjInWorld_y_r = -.191 + objCOMinWrist3_r  # = .2415; TODO: uncomment as object is added
-initialPoseOfObjInWorld_z_r = .609
+initialPoseOfObjInWorld_x_r = 0.552
+initialPoseOfObjInWorld_y_r = -.191   # TODO: uncomment as object is removed
+# initialPoseOfObjInWorld_y_r = -.191 + objCOMinWrist3_r  # = .2415; TODO: uncomment as object is added
+initialPoseOfObjInWorld_z_r = .166
 
 initialOrientationOfObj_roll_r = 0.
 initialOrientationOfObj_pitch_r = 0.
@@ -95,10 +96,12 @@ inertiaTensor = np.array([[.0021, 0, 0],
                           [0, .00021, 0],
                           [0, 0, .0021]])  # TODO: according to 'ur5.urdf.xacro'
 M_o[:3, :3] = M_o[:3, :3]*obj_mass
-M_o[3:, 3:] = inertiaTensor
+# M_o[3:, 3:] = inertiaTensor  # uncomment when object is added.
+M_o = np.zeros((workspaceDoF, workspaceDoF))  # uncomment when object is removed.
 
 ## definition of vector of generalized Centripetal, Coriolis, and Gravity forces:
-h_o = np.array([0., 0., -mg_obj, 0., 0., 0.])
+# h_o = np.array([0., 0., -mg_obj, 0., 0., 0.])  # uncomment when object is added.
+h_o = np.array([0.]*workspaceDoF)  # uncomment when object is removed.
 
 
 pathToCSVFile = config.bimanual_ur5_dic['CSVFileDirectory']
@@ -532,7 +535,7 @@ def JointStatesCallback(data):
     # qDDotCurrent_r = (qDotCurrent_r - qDotCurrent_pre_r) / dt
     # qDotCurrent_pre_r = qDotCurrent_r
 
-    MapFTContactToWorld(loaded_model_r, qCurrent_r, linkName_r, rightContactFTSensoryData)  # uncomment '/ft_sensor_topic_wrist3_r' subscriber
+    # MapFTContactToWorld(loaded_model_r, qCurrent_r, linkName_r, rightContactFTSensoryData)  # uncomment '/ft_sensor_topic_wrist3_r' subscriber
 
     poseTrajectoryDes, velTrajectoryDes, accelTrajectoryDes = \
                                               IterateThroughTraj6dData(time_gaz)
@@ -550,6 +553,7 @@ def JointStatesCallback(data):
     jointTau = InverseDynamic(qCurrent_r, qDotCurrent_r, qDDotCurrent_r,
                               jointPoseDes, jointVelDes, jointAccelDes)
 
+    WriteToCSV(jointTau, 'right_arm_torque (Nm)', ['T_shoulder', 'T_upper', 'T_forearm', 'T_w1', 'T_w2', 'T_w3'])
     # jointTau = PositinoControl(qCurrent_r, qDotCurrent_r, qDDotCurrent_r)
 
     PubTorqueToGazebo(jointTau)
@@ -599,7 +603,7 @@ if __name__ == '__main__':
     try:
         ReadTrajData()  # read entire 'trajDataFile' file and store it in global variables.
         rospy.Subscriber("/joint_states", JointState, JointStatesCallback)
-        rospy.Subscriber("/ft_sensor_topic_wrist3_r", WrenchStamped, FTwristSensorCallback_r)
+        # rospy.Subscriber("/ft_sensor_topic_wrist3_r", WrenchStamped, FTwristSensorCallback_r)
         rospy.spin()
 
     except rospy.ROSInterruptException:

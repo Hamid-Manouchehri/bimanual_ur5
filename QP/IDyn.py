@@ -115,7 +115,7 @@ def InverseDynamics(q, dq, X_o, dX_o, X_des, Xdot_des, Xddot_des, \
 
     if min_lambda:
         W, tau_0 = IntForceParam_mine(J_a, J_b, J_oa, J_ob, S, Mqh, X_o[2])
-        print tau_0
+        # print tau_0
 
     invw = inv(W)
 

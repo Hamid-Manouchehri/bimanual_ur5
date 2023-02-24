@@ -18,19 +18,21 @@ int main(){
   std::vector<double> t_via, eulerToQuat0, eulerToQuatf, eulerToQuat1, eulerToQuat2;
   std::vector<Eigen::Quaterniond> quat_via;
 
-  // std::string dataFileName = "trajectory_data_bimanual.txt";  // TODO: uncomment for 'main_bimanual.py'.
-  std::string dataFileName = "trajectory_data_right.txt";  // TODO: uncomment for 'main_right_arm.py'.
-  // std::string dataFileName = "trajectory_data_left.txt";  // TODO: uncomment for 'main_left_arm.py'.
+  std::string dataFileName = "./traj_data/trajectory_data_bimanual.txt";  // TODO: uncomment for 'main_bimanual.py'.
+  // std::string dataFileName = "./traj_data/trajectory_data_right.txt";  // TODO: uncomment for 'main_right_arm.py'.
+  // std::string dataFileName = "./traj_data/trajectory_data_left.txt";  // TODO: uncomment for 'main_left_arm.py'.
 
   dt = 0.001;
 
-
-
-
   t0 = 0;
   t1 = 1.5;  // TODO: via time for 'quat1'
-  t2 = 3;  // TODO: via time for 'quat2'
-  t_end = 4;  // TODO: must be same as 't_end' of main simulation node.
+  t2 = 2;  // TODO: via time for 'quat2'
+  t_end = 3;  // TODO: must be same as 't_end' of main simulation node.
+
+  // t0 = 13.5;
+  // t1 = 14.25;  // TODO: via time for 'quat1'
+  // t2 = 14.5;  // TODO: via time for 'quat2'
+  // t_end = 15;  // TODO: must be same as 't_end' of main simulation node.
 
   //// Note: generalized postion of object is defined according to 'wrist_3_link_r' link:
   wrist_3_length = 0.0823;  // based on 'ur5.urdf.xacro'
@@ -51,35 +53,88 @@ int main(){
   initPoseOfRightWrist3[1] = -.191;  // y_i
   initPoseOfRightWrist3[2] = .166;  // z_i
   //// final linear position of 'wrist_3_link_r' frame (x, y, z) in world frame:
-  finalPoseOfRightWrist3[0] = initPoseOfRightWrist3[0] - .1;  //x_f
-  finalPoseOfRightWrist3[1] = initPoseOfRightWrist3[1] + .2;  // y_f
-  finalPoseOfRightWrist3[2] = initPoseOfRightWrist3[2] - .1;  // z_f
+  finalPoseOfRightWrist3[0] = initPoseOfRightWrist3[0];  // x_f
+  finalPoseOfRightWrist3[1] = initPoseOfRightWrist3[1];  // y_f
+  finalPoseOfRightWrist3[2] = initPoseOfRightWrist3[2];  // z_f
+
+  //// initial linear position of 'wrist_3_link_r' frame in world frame:
+  // initPoseOfRightWrist3[0] = .552;  // x_i
+  // initPoseOfRightWrist3[1] = -.391;  // y_i
+  // initPoseOfRightWrist3[2] = .266;  // z_i
+  // //// final linear position of 'wrist_3_link_r' frame (x, y, z) in world frame:
+  // finalPoseOfRightWrist3[0] = initPoseOfRightWrist3[0];  // x_f
+  // finalPoseOfRightWrist3[1] = initPoseOfRightWrist3[1] + .2;  // y_f
+  // finalPoseOfRightWrist3[2] = initPoseOfRightWrist3[2] - .1;  // z_f
 
   //// Note #1: the euler order is 'YZX' to change euler angles to quaternions.
   //// Note #2: object has 'pi' rad initial orientation about 'y-axis' in world frame.
+  //// Note #3: for each simulation uncomment one set of orientations.
   //// [w, x, y, z]
-  Eigen::Quaterniond quat0(0, 0, 1, 0);  // TODO: initial angular position, uncomment for 'wrist_3_link_r',  pi (rad) z-axis
-  // Eigen::Quaterniond quat1(0, 0, 1, 0);  // steady
-  // Eigen::Quaterniond quat2(0, 0, 1, 0);  // steady
-  // Eigen::Quaterniond quatf(0, 0, 1, 0);  // steady
+  Eigen::Quaterniond quat0(0, 0, 1, 0);  // initial angular position, uncomment for 'wrist_3_link_r',  pi (rad) z-axis
 
-  Eigen::Quaterniond quat1(0, 0, .9659, -.2588);  // TODO: pi/6 (rad) x-axis
-  Eigen::Quaterniond quat2(0, 0, .866, -0.5);  // TODO: pi/3 (rad) x-axis
-  Eigen::Quaterniond quatf(0, 0, .707, -0.707);  // TODO: pi/2 (rad) x-axis
-
-  // Eigen::Quaterniond quat1(-0.2588, 0, .9659, 0);  // TODO: pi + pi/6 (rad) y-axis
-  // Eigen::Quaterniond quat2(-0.3827, 0, .9239, 0);  // TODO: pi + pi/4 (rad) y-axis
-  // Eigen::Quaterniond quatf(-0.5, 0, .866, 0);  // TODO: pi + pi/3 (rad) y-axis
-
-  // Eigen::Quaterniond quat1(0, -0.2588, .9659, 0.);  // TODO: pi/6 (rad) z-axis
-  // Eigen::Quaterniond quat2(0, -0.3827, .9239, 0.);  // TODO: pi/4 (rad) z-axis
-  // Eigen::Quaterniond quatf(0, -0.5, .866, 0.);  // TODO: pi/3 (rad) z-axis
+  Eigen::Quaterniond quat1(0, 0, 1, 0);  // TODO: steady
+  Eigen::Quaterniond quat2(0, 0, 1, 0);  // TODO: steady
+  Eigen::Quaterniond quatf(0, 0, 1, 0);  // TODO: steady
 
 
 
+  // Eigen::Quaterniond quat1(0, 0, .9848, -.1737);  // TODO: -20 (deg) x-axis
+  // Eigen::Quaterniond quat2(0, 0, .9397, -0.342);  // TODO: -40 (deg) x-axis
+  // Eigen::Quaterniond quatf(0, 0, .8661, -0.5);  // TODO: -60 (deg) x-axis
+
+  //// vice versa:
+  // Eigen::Quaterniond quat0(0, 0, .8661, -0.5);  // TODO: -60 (deg) x-axis
+  // Eigen::Quaterniond quat1(0, 0, .9397, -0.342);  // TODO: -40 (deg) x-axis
+  // Eigen::Quaterniond quat2(0, 0, .9848, -.1737);  // TODO: -20 (deg) x-axis
+  // Eigen::Quaterniond quatf(0, 0, 1, 0);
 
 
-  // SINGLE left ur5:
+
+  // Eigen::Quaterniond quat1(-0.174, 0, .9848, 0);  // TODO: pi (rad) + 20 (deg) y-axis
+  // Eigen::Quaterniond quat2(-0.3420, 0, .9397, 0);  // TODO: pi (rad) + 40 (deg) y-axis
+  // Eigen::Quaterniond quatf(-0.5, 0, .8660, 0);  // TODO: pi (rad) + pi/3 (rad) y-axis
+
+  //// vice-versa:
+  // Eigen::Quaterniond quat0(-0.5, 0, .8660, 0);  // TODO: pi (rad) + pi/3 (rad) y-axis
+  // Eigen::Quaterniond quat1(-0.3420, 0, .9397, 0);  // TODO: pi (rad) + 40 (deg) y-axis
+  // Eigen::Quaterniond quat2(-0.174, 0, .9848, 0);  // TODO: pi (rad) + 20 (deg) y-axis
+  // Eigen::Quaterniond quatf(0, 0, 1, 0);
+
+
+
+  // Eigen::Quaterniond quat1(0, -0.1737, .9848, 0.);  // TODO: 20 (deg) z-axis
+  // Eigen::Quaterniond quat2(0, -0.3420, .9397, 0.);  // TODO: 40 (deg) z-axis
+  // Eigen::Quaterniond quatf(0, -.5, .8661, 0.);  // TODO: 60 (deg) z-axis
+
+  //// vice versa:
+  // Eigen::Quaterniond quat0(0, -.5, .8661, 0.);  // TODO: 60 (deg) z-axis
+  // Eigen::Quaterniond quat1(0, -0.3420, .9397, 0.);  // TODO: 40 (deg) z-axis
+  // Eigen::Quaterniond quat2(0, -0.1737, .9848, 0.);  // TODO: 20 (deg) z-axis
+  // Eigen::Quaterniond quatf(0, 0, 1, 0);
+
+
+
+  // Eigen::Quaterniond quat1(-.171, -0.03, .9698, -.171);  // TODO: 20 (deg) xy-axis
+  // Eigen::Quaterniond quat2(-0.3214, -0.117, .8830, -0.3214);  // TODO: 40 (deg) xy-axis
+  // Eigen::Quaterniond quatf(-0.4330, -0.25, .75, -0.4329);  // TODO: 60 (deg) xy-axis
+
+  //// vice versa:
+  // Eigen::Quaterniond quat0(-0.4330, -0.25, .75, -0.4329);  // TODO: 60 (deg) xy-axis
+  // Eigen::Quaterniond quat1(-0.3214, -0.117, .8830, -0.3214);  // TODO: 40 (deg) xy-axis
+  // Eigen::Quaterniond quat2(-.171, -0.03, .9698, -.171);  // TODO: 20 (deg) xy-axis
+  // Eigen::Quaterniond quatf(0, 0, 1, 0);
+
+  // Eigen::Quaterniond quat1(-.03, .171, .9698, -.171);  // TODO: 20 (deg) xz-axis
+  // Eigen::Quaterniond quat2(-0.117, 0.3214, .8830, -0.3214);  // TODO: 40 (deg) xz-axis
+  // Eigen::Quaterniond quatf(-0.25, 0.433, .75, -0.433);  // TODO: 60 (deg) xz-axis
+
+  // Eigen::Quaterniond quat1(-.171, .171, .9698, -.03);  // TODO: 20 (deg) yz-axis
+  // Eigen::Quaterniond quat2(-0.3214, 0.3214, .8830, -0.117);  // TODO: 40 (deg) yz-axis
+  // Eigen::Quaterniond quatf(-0.433, 0.433, .75, -0.25);  // TODO: 60 (deg) yz-axis
+
+
+
+  //// SINGLE left ur5:
   // Eigen::Quaterniond quat0(0, 0, 0, 1);  // TODO: initial angular position, uncomment for 'wrist_3_link_l'(quaternion (w, q1, q2, q3)),  pi (rad) z-axis
   // Eigen::Quaterniond quat1(0, 0.2588, 0, .9659);  // TODO: pi/6 (rad) z-axis
   // Eigen::Quaterniond quat2(0, 0.3827, 0, .9239);  // TODO: pi/4 (rad) z-axis
@@ -149,9 +204,9 @@ int main(){
     myfile << " ";
     myfile << a.transpose();
     myfile << " ";
-    myfile << quat.w();
+    myfile << quat.w();  // scalar part of quat
     myfile << " ";
-    myfile << quat.vec().transpose();
+    myfile << quat.vec().transpose();  // vector part of quat
     myfile << " ";
     myfile << w.transpose();
     myfile << " ";

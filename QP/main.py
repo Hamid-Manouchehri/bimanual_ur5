@@ -17,7 +17,7 @@ from cvxopt import solvers, matrix
 import quadprog
 
 import sys
-sys.path.append('/home/mshahbazi/projects/rbdl/build/python/')
+# sys.path.append('/home/mshahbazi/projects/rbdl/build/python/')
 import rbdl
 
 from Utils import Anim_bimanual
@@ -34,17 +34,17 @@ from QP import QP
 from IDyn import Task2Joint, IntForceParam_mine, InverseDynamics
 ####
 
-execfile('Dyn_Matices.py')
-execfile('FDyn.py')
-execfile('Misc.py')
-execfile('QP.py')
-execfile('IDyn.py')
+exec(open("Dyn_Matices.py").read())
+exec(open("FDyn.py").read())
+exec(open("Misc.py").read())
+exec(open("QP.py").read())
+exec(open("IDyn.py").read())
 
 save = GetLambda()
 
 flag_quadprog = True
 flag_cvxopt = False
-flag_omf = True #Object-Model-Free
+flag_omf = False #Object-Model-Free
 
 
 ######################################################
@@ -87,13 +87,15 @@ tip_b = np.array([lb2, 0., 0.])
 
 
 x_start = np.array([0, 0.9, 0])
-x_end = np.array([-.5, .5, +np.pi/3])
+# x_end = np.array([-.5, .5, +np.pi/3])
+x_end = np.array([0, 0.9, 0])
 z_start = [x_start, np.zeros(3), np.zeros(3)]
 z_end = [x_end, np.zeros(3), np.zeros(3)]
 x_des_t1, xdot_des_t1, xddot_des_t1 = traj_plan(0, t_end/3, z_start, z_end)
 
 x_start = x_end.copy()
-x_end = np.array([.5, .5, -np.pi/3])
+# x_end = np.array([.5, .5, -np.pi/3])
+x_end = np.array([0, 0.9, 0])
 z_start = [x_start, np.zeros(3), np.zeros(3)]
 z_end = [x_end, np.zeros(3), np.zeros(3)]
 x_des_t2, xdot_des_t2, xddot_des_t2 = traj_plan(0, t_end/3, z_start, z_end)

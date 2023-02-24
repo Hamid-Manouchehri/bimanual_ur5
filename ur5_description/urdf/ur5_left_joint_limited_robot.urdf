@@ -139,7 +139,7 @@
     </collision>
     <inertial>
       <mass value="2.275"/>
-      <origin rpy="0 0 0" xyz="0.0 0.0 0.196125"/>
+      <origin rpy="0 0 0" xyz="0.0 0.0 0.25"/>
       <inertia ixx="0.049443313556" ixy="0.0" ixz="0.0" iyy="0.049443313556" iyz="0.0" izz="0.004095"/>
     </inertial>
   </link>
@@ -167,8 +167,8 @@
     </collision>
     <inertial>
       <mass value="1.219"/>
-      <origin rpy="0 0 0" xyz="0.0 0.93 0.0"/>
-      <inertia ixx="0.0025" ixy="0.0" ixz="0.0" iyy="0.0025" iyz="0.0" izz="0.0022"/>
+      <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+      <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
   <joint name="wrist_2_joint_l" type="revolute">
@@ -195,8 +195,8 @@
     </collision>
     <inertial>
       <mass value="1.219"/>
-      <origin rpy="0 0 0" xyz="0.0 0.0 0.09465"/>
-      <inertia ixx="0.0025" ixy="0.0" ixz="0.0" iyy="0.0025" iyz="0.0" izz="0.0022"/>
+      <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+      <inertia ixx="0.111172755531" ixy="0.0" ixz="0.0" iyy="0.111172755531" iyz="0.0" izz="0.21942"/>
     </inertial>
   </link>
   <joint name="wrist_3_joint_l" type="revolute">
@@ -223,8 +223,8 @@
     </collision>
     <inertial>
       <mass value="0.1879"/>
-        <origin rpy="0 0 0" xyz="0.0 0.06505 0.0"/>
-      <inertia ixx="0.00008" ixy="0.0" ixz="0.0" iyy="0.00008" iyz="0.0" izz="0.00013"/>
+        <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+      <inertia ixx="0.0171364731454" ixy="0.0" ixz="0.0" iyy="0.0171364731454" iyz="0.0" izz="0.033822"/>
     </inertial>
   </link>
   <!-- <joint name="ee_fixed_joint_l" type="fixed">
@@ -296,23 +296,23 @@
   </transmission>
   <!-- nothing to do here at the moment -->
   <!-- ROS base_link to UR 'Base' Coordinates transform -->
-  <!-- <link name="base_l"/>
-  <joint name="base_link_l-base_fixed_joint" type="fixed"> -->
+  <link name="base_l"/>
+  <joint name="base_link_l-base_fixed_joint" type="fixed">
     <!-- NOTE: this rotation is only needed as long as base_link itself is
                  not corrected wrt the real robot (ie: rotated over 180
                  degrees)
       -->
-    <!-- <origin rpy="0 0 -3.14159265359" xyz="0 0 0"/>
+    <origin rpy="0 0 -3.14159265359" xyz="0 0 0"/>
     <parent link="base_link_l"/>
     <child link="base_l"/>
-  </joint> -->
+  </joint>
   <!-- Frame coincident with all-zeros TCP on UR controller -->
-  <!-- <link name="tool0_l"/>
+  <link name="tool0_l"/>
   <joint name="wrist_3_link_l-tool0_fixed_joint" type="fixed">
     <origin rpy="-1.57079632679 0 0" xyz="0 0.0823 0"/>
     <parent link="wrist_3_link_l"/>
     <child link="tool0_l"/>
-  </joint> -->
+  </joint>
   <link name="world"/>
   <joint name="world_joint_l" type="fixed">
     <parent link="world"/>

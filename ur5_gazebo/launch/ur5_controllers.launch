@@ -34,9 +34,9 @@
   </node>
 
   <!-- TF -->
-  <node pkg="robot_state_publisher" type="robot_state_publisher"
+  <!-- <node pkg="robot_state_publisher" type="robot_state_publisher"
         name="state_publisher">
     <param name="publish_frequency" type="double" value="50" />
-  </node>
+  </node> -->
 
 </launch>

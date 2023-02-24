@@ -38,19 +38,19 @@ plt.plot(t1[ind], t2[ind], 'o')
 
 
 
-def aj(mu, N, j): 
+def aj(mu, N, j):
     return np.dot(FuncS(mu, N, j)[1], FuncS(mu, N, j+1)[2]) - \
-           np.dot(FuncS(mu, N, j)[2], FuncS(mu, N, j+1)[1]) 
+           np.dot(FuncS(mu, N, j)[2], FuncS(mu, N, j+1)[1])
 
-def bj(mu, N, j): 
+def bj(mu, N, j):
     return np.dot(FuncS(mu, N, j)[2], FuncS(mu, N, j+1)[0]) - \
-           np.dot(FuncS(mu, N, j+1)[2], FuncS(mu, N, j)[0]) 
+           np.dot(FuncS(mu, N, j+1)[2], FuncS(mu, N, j)[0])
 
-def cj(mu, N, j): 
+def cj(mu, N, j):
     return np.dot(FuncS(mu, N, j)[0], FuncS(mu, N, j+1)[1]) - \
-           np.dot(FuncS(mu, N, j+1)[0], FuncS(mu, N, j)[1]) 
+           np.dot(FuncS(mu, N, j+1)[0], FuncS(mu, N, j)[1])
 
-def FuncS(mu, N, j): 
+def FuncS(mu, N, j):
     return [mu*np.cos(2*np.pi/N*j), mu*np.sin(2*np.pi/N*j), 1]
 
 def LinearizeFCone(mu, N):
@@ -82,13 +82,10 @@ for i in range(N):
 
 #ind1 = zss<=2.61
 #ind2 = zss>=2.6
-#ind = ind1 & ind2    
-    
- 
+#ind = ind1 & ind2
+
+
 #tt = np.linspace(-5, 5, 100)
 #nn = 1/mu*np.sqrt(20**2 + tt**2)
 #
 #plt.plot(tt, nn)
-    
-
-

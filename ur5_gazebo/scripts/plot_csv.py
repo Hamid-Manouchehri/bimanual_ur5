@@ -16,11 +16,12 @@ from sys import path
 path.insert(1, '/home/rebel/ROS1_workspaces/bimanual_ur5_ws/src/ur5_description/config/')  # TODO: Insert dir of config folder of the package.
 import config
 
-titleOfPlot = "< centrifugal, coriolis, gravity forces >"  # TODO
+titleOfPlot = "file_name"  # TODO
 titleOfXaxis = "time (s)"  # TODO
 
-CSVFileName_livePlot_data = config.bimanual_ur5_dic['CSVFileName']  # TODO: Change 'plot_csv_dic' to whatever is defined in 'config.py'
-pathToCSVFile = config.bimanual_ur5_dic['CSVFileDirectory']  # TODO: Change 'plot_csv_dic' to whatever is defined in 'config.py'
+# CSVFileName_livePlot_data = 'T_z_90_10_5_70_35.csv'  # TODO: manual change of file_name
+CSVFileName_livePlot_data = config.bimanual_ur5_dic['CSVFileName']
+pathToCSVFile = config.bimanual_ur5_dic['CSVFileDirectory']
 
 
 def ReadCSV():
@@ -38,6 +39,8 @@ def main():
     """Compute main routine."""
     livePlotVal_x = []
     livePlotVal_y = []
+    livePlotVal_y_des = []
+    livePlotVal_y_actual = []
 
     if os.path.isfile(pathToCSVFile + CSVFileName_livePlot_data) is True:
         csvFileData = ReadCSV()  # string.
@@ -53,16 +56,23 @@ def main():
             for j in range(numOfColumns):
                 Data[i][j] = (float(csvFileData[i+1][j]))  # cast str to float
             livePlotVal_x.append(Data[i][0])
-            livePlotVal_y.append(Data[i][1:])
+            livePlotVal_y.append(Data[i][1:])  # TODO  # TODO: uncomment for automatic call
+            # livePlotVal_y_des.append(Data[i][1:4])  # TODO: for separated desired trajectory, notice to change boundary indeces for different data structures.
+            # livePlotVal_y_actual.append(Data[i][4:])  # TODO: for separated actual trajectory, notice to change boundary indeces for different data structures.
 
         plt.figure(titleOfPlot)  # title of the figure
-        plt.plot(livePlotVal_x, livePlotVal_y)
-        plt.xlabel(titleOfXaxis)
+        plt.plot(livePlotVal_x, livePlotVal_y)  # TODO: uncomment for automatic call
+        # plt.plot(livePlotVal_x, livePlotVal_y_des, linestyle='dotted')  # TODO: for separated desired trajectory
+        # plt.plot(livePlotVal_x, livePlotVal_y_actual, linestyle='solid')  # TODO: for separated actual trajectory
+        plt.xlabel(titleOfXaxis, fontsize=18)
         if csvFileData[0][0] == 'time':  # Check if header (as string) is added
-            plt.ylabel(titleOfYaxis)
-            plt.legend(plotLegend)
+            plt.ylabel(titleOfYaxis, fontsize=18)  # TODO: uncomment for automatic setting 'ylabel'
+            # plt.ylabel('translational_traj object (m)', fontsize=18)  # TODO: for manual setting of 'ylabel'
+            plt.legend(plotLegend, fontsize=18)
         plt.grid()
         plt.tight_layout()
+        plt.tick_params(axis='x', labelsize=18)
+        plt.tick_params(axis='y', labelsize=18)
         plt.show()
 
     else:

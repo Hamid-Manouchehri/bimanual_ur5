@@ -6,6 +6,8 @@ Created on Mon Feb 27 22:29:50 2017
 @author: user
 """
 
+import matplotlib.pyplot as plt
+
 plt.rcParams['ps.useafm'] = True
 plt.rcParams['pdf.use14corefonts'] = True
 plt.rcParams['text.usetex'] = True
@@ -20,7 +22,7 @@ plt.subplot(311)
 plt.plot(t, q[:, 6], color='k', lw=1.5)
 plt.plot(t, x_des[:, 0], '--', color='r', lw=1.5)
 plt.ylabel(r"$x\, (\mathrm{m})$", fontsize=font_label)
-#ax1 = plt.axes()  
+#ax1 = plt.axes()
 #ax1.yaxis.grid()
 plt.grid(1)
 
@@ -29,7 +31,7 @@ plt.plot(t, q[:, 7], color='k', lw=1.5)
 plt.plot(t, x_des[:, 1], '--', color='r', lw=1.5)
 plt.ylabel(r"$y\, (\mathrm{m})$", fontsize=font_label)
 plt.legend(['Actual', 'Desired'], loc='upper center', fontsize=12)
-#ax2 = plt.axes()  
+#ax2 = plt.axes()
 #ax2.yaxis.grid()
 plt.grid(1)
 
@@ -40,7 +42,7 @@ plt.plot(t, np.rad2deg(x_des[:, 2]), '--', color='r', lw=1.5)
 plt.ylabel(r"$\theta\, (\mathrm{degree})$", fontsize=font_label)
 plt.xlabel(r"$\mathrm{Time} \, (\mathrm{s})$", fontsize=font_label)
 plt.ylim(-70, 70)
-#ax3 = plt.axes()  
+#ax3 = plt.axes()
 #ax3.yaxis.grid()
 plt.tight_layout()
 plt.grid(1)
@@ -57,7 +59,7 @@ plt.plot(t, u_a[:, 2], ':',color='b', lw=1.5)
 plt.ylabel(r"$\tau\, (\mathrm{Nm})$", fontsize=font_label)
 plt.xlabel(r"$\mathrm{Time} \, (\mathrm{s})$", fontsize=font_label)
 plt.grid(1)
-leg = plt.legend([r'$\tau_1, \mathrm{shoulder}$', r'$\tau_2, \mathrm{elbow}$', 
+leg = plt.legend([r'$\tau_1, \mathrm{shoulder}$', r'$\tau_2, \mathrm{elbow}$',
             r'$\tau_3, \mathrm{wrist}$'], loc='lower right', fontsize=12)
 
 leg.get_frame().set_alpha(0.6)
@@ -180,7 +182,7 @@ plt.plot(t, x_des[:, 2] - q[:, 8], ':',color='b', lw=1.5)
 plt.ylabel(r"$\mathrm{Position\, error}\, (\mathrm{m}\, \mathrm{or}\, \mathrm{rad})$", fontsize=font_label)
 plt.xlabel(r"$\mathrm{Time} \, (\mathrm{s})$", fontsize=font_label)
 plt.grid(1)
-leg = plt.legend([r'$x$', r'$y$', 
+leg = plt.legend([r'$x$', r'$y$',
             r'$\theta$'], loc='upper right', fontsize=12)
 leg.get_frame().set_alpha(0.5)
 
@@ -199,22 +201,9 @@ plt.plot(t, F_a[:, 2] - F_a_p[:, 2], ':',color='b', lw=1.5)
 plt.ylabel(r"$\mathrm{Force\, error}\, (\mathrm{N}\, \mathrm{or}\, \mathrm{Nm})$", fontsize=font_label)
 plt.xlabel(r"$\mathrm{Time} \, (\mathrm{s})$", fontsize=font_label)
 plt.grid(1)
-leg = plt.legend([r'$x$', r'$y$', 
+leg = plt.legend([r'$x$', r'$y$',
             r'$\theta$'], loc='lower right', fontsize=12)
 leg.get_frame().set_alpha(0.5)
 
 plt.tight_layout()
 #plt.savefig('ModelFreeForce.pdf')
-
-
-
-
-
-
-
-
-
-
-
-
-

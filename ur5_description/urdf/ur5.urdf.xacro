@@ -12,7 +12,7 @@
   <xacro:property name="wrist_1_mass" value="1.2190" />
   <xacro:property name="wrist_2_mass" value="1.2190" />
   <xacro:property name="wrist_3_mass" value="0.1879" />
-  <xacro:property name="obj_mass" value="0.5" />
+  <xacro:property name="obj_mass" value=".5" />
 
   <xacro:property name="shoulder_cog" value="0.0 0.00193 -0.02561" />
   <xacro:property name="upper_arm_cog" value="0.0 -0.024201 0.2125" />
@@ -614,10 +614,11 @@
             <origin rpy="0 0 0" xyz="0.0 ${obj_length/2} 0.0"/>
             <mass value="${obj_mass}"/>
             <inertia ixx=".0021" ixy="0" ixz="0" iyy=".00021" iyz="0" izz=".0021"/>
+            <!-- <inertia ixx=".00248" ixy="0" ixz="0" iyy=".00025" iyz="0" izz=".00248"/> -->
         </inertial>
     </link>
 
-    <!-- <gazebo>
+    <gazebo>
         <joint name="wrist_3_to_obj_joint_l" type="fixed">
             <parent>wrist_3_link_l</parent>
             <child>obj</child>
@@ -633,7 +634,7 @@
                 </ode>
             </physics>
         </joint>
-    </gazebo> -->
+    </gazebo>
 
     <!-- The ft_sensor plugin -->
     <gazebo reference="${prefix}wrist_3_joint_r">

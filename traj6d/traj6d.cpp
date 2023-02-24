@@ -110,6 +110,7 @@ void quintic_traj::generateTraj_Angular(const std::string& type, const bool meth
     }
     else if(traj_type_Angular == "spline_poly"){
 
+      //// equ(6,7): orientation planning:
       quintic_traj::w2dq(quat0, w0, dw0, dquat0, ddquat0);
       quintic_traj::w2dq(quatf, wf, dwf, dquatf, ddquatf);
 
@@ -135,10 +136,7 @@ void quintic_traj::generateTraj_Angular(const std::string& type, const bool meth
       cp.resize(N - 2);
       dp.resize(N - 2);
       v_temp.resize(N - 2);
-//       abcd.a_resized*/.resize(N - 3);
-//       abcd.c_resized.resize(N - 3);
       VQcoeffs.resize(N - 1);
-//       VQcoeffs_updated.resize(N - 1);
       Vcoeffs.resize(N - 1);
 
       quat_old = quat0;
@@ -149,38 +147,30 @@ void quintic_traj::generateTraj_Angular(const std::string& type, const bool meth
       dqddq = (dQddQ){dquat0, dquatf, ddquat0, ddquatf};
       quintic_traj::computePolySplineCpoints(t_all, quat_all, "343");
 
-//       VQcoeffs_updated = VQcoeffs; //TODO: !
       qcoeffs = VQcoeffs[0];
       qcoeffs_old = qcoeffs;
 
       traj_Angular_successive = method_successive;
 
-//       int ind = 0;
-//       std::cout << VQcoeffs[ind].p0.coeffs().transpose() << std::endl;
-//       std::cout << VQcoeffs[ind].p1.coeffs().transpose() << std::endl;
-//       std::cout << VQcoeffs[ind].p2.coeffs().transpose() << std::endl;
-//       std::cout << VQcoeffs[ind].p3.coeffs().transpose() << std::endl;
-//       std::cout << VQcoeffs[ind].p4.coeffs().transpose() << std::endl;
-
     }
     else {
 
-    p1f_eigen = Eigen::Quaterniond(0, wf[0]/2, wf[1]/2, wf[2]/2);
-    p2f_eigen = Eigen::Quaterniond(-.25*pow(wf.norm(), 2), dwf[0]/2, dwf[1]/2, dwf[2]/2);
+      p1f_eigen = Eigen::Quaterniond(0, wf[0]/2, wf[1]/2, wf[2]/2);
+      p2f_eigen = Eigen::Quaterniond(-.25*pow(wf.norm(), 2), dwf[0]/2, dwf[1]/2, dwf[2]/2);
 
-    dquatf = p1f_eigen * quatf;
-    ddquatf = p2f_eigen * quatf;
+      dquatf = p1f_eigen * quatf;  // equ(6)
+      ddquatf = p2f_eigen * quatf;  // equ(7)
 
-    traj_Angular_successive = method_successive;
+      traj_Angular_successive = method_successive;
 
-    t0_updated = t0;
-    quat_old = quat0;
-    w_old = w0;
-    dw_old = dw0;
+      t0_updated = t0;
+      quat_old = quat0;
+      w_old = w0;
+      dw_old = dw0;
 
-    p_Angular.resize(6); // the last two elements can be left idle for cubic traj
+      p_Angular.resize(6); // the last two elements can be left idle for cubic traj
 
-    quintic_traj::computeCoeffs_Angular (true);
+      quintic_traj::computeCoeffs_Angular (true);
     }
 
 }
@@ -188,7 +178,7 @@ void quintic_traj::generateTraj_Angular(const std::string& type, const bool meth
 
 void quintic_traj::w2dq(const Eigen::Quaterniond& q, const Eigen::Vector3d& w, const Eigen::Vector3d& dw,
                         Eigen::Quaterniond& dq, Eigen::Quaterniond& ddq)
-{
+{ //// equ(6,7): orientation planning
   p1_eigen.vec().noalias() = w/2;
   p1_eigen.w() = 0;
   p2_eigen.vec().noalias() = dw/2;
@@ -312,28 +302,18 @@ void quintic_traj::computeQuinticDoubleAndDerives(const std::vector<double>& p, 
 // }
 
 void quintic_traj::computeQuaternionAndDerives(const double t, Eigen::Quaterniond& q,
-							       Eigen::Quaterniond& dq,
-					                       Eigen::Quaterniond& ddq){
+							       Eigen::Quaterniond& dq, Eigen::Quaterniond& ddq){
 
   if (traj_type_Angular == "quintic"){
 
       q.coeffs().noalias() = pow(1 - t, 3)*(p_Angular[0].coeffs() + p_Angular[1].coeffs()*t + p_Angular[2].coeffs()*t*t) +
 	    pow(t, 3)*(p_Angular[3].coeffs() + p_Angular[4].coeffs()*(1 - t) + p_Angular[5].coeffs()*(1 - t)*(1 - t));
 
-//       q.vec() = pow(1 - t, 3)*(p_Angular[0].vec() + p_Angular[1].vec()*t + p_Angular[2].vec()*t*t) +
-// 	    pow(t, 3)*(p_Angular[3].vec() + p_Angular[4].vec()*(1 - t) + p_Angular[5].vec()*(1 - t)*(1 - t));
-
       dq.coeffs().noalias() = pow(1 - t, 2)*(-3*p_Angular[0].coeffs() + p_Angular[1].coeffs()*(1 - 4*t) + p_Angular[2].coeffs()*(2*t - 5*t*t)) +
 	    pow(t, 2)*(3*p_Angular[3].coeffs() + p_Angular[4].coeffs()*(3 - 4*t) + p_Angular[5].coeffs()*(3 - 8*t + 5*t*t));
 
-//       dq.vec() = pow(1 - t, 2)*(-3*p_Angular[0].vec() + p_Angular[1].vec()*(1 - 4*t) + p_Angular[2].vec()*(2*t - 5*t*t)) +
-// 	    pow(t, 2)*(3*p_Angular[3].vec() + p_Angular[4].vec()*(3 - 4*t) + p_Angular[5].vec()*(3 - 8*t + 5*t*t));
-
       ddq.coeffs().noalias() = (1 - t)*(6*p_Angular[0].coeffs() - p_Angular[1].coeffs()*6*(1 - 2*t) + p_Angular[2].coeffs()*2*(1 - 8*t + 10*t*t)) +
 	    t*(6*p_Angular[3].coeffs() + p_Angular[4].coeffs()*6*(1 - 2*t) + p_Angular[5].coeffs()*2*(3 - 12*t + 10*t*t));
-
-//       ddq.vec() = (1 - t)*(6*p_Angular[0].vec() - p_Angular[1].vec()*6*(1 - 2*t) + p_Angular[2].vec()*2*(1 - 8*t + 10*t*t)) +
-// 	    t*(6*p_Angular[3].vec() + p_Angular[4].vec()*6*(1 - 2*t) + p_Angular[5].vec()*2*(3 - 12*t + 10*t*t));
 
   } else{
     Eigen::Quaterniond temp1, temp2;
@@ -355,18 +335,11 @@ void quintic_traj::computeQuaternionAndDerives(const double t, Eigen::Quaternion
     temp2.vec() = 6*p_Angular[2].vec()*t + 2*p_Angular[3].vec();
 
     ddq = temp1*temp2;
-
-
   }
-
 }
 
 void quintic_traj::getState_Angular(const double t, Eigen::Quaterniond& quat, Eigen::Vector3d& w,
 						      Eigen::Vector3d& dw, const double period){
-//   t_now = t;
-
-//   Eigen::Quaterniond q, dq, ddq;
-
   dt = period;
 
   if (traj_type_Angular == "slerp"){
@@ -415,71 +388,49 @@ void quintic_traj::getState_Angular(const double t, Eigen::Quaterniond& quat, Ei
   else if (traj_type_Angular == "spline_poly")
   {
    double t0_here = t0;
-//    std::cout << t << ", " << quat_old.coeffs().transpose() << std::endl;
-   if (fabs(t - t0) > dt/2) quintic_traj::getPolySplineCurrentParams(t - dt, quat_old, w_old, dw_old, qcoeffs, t0_here);
+   if (fabs(t - t0) > dt/2){
+     // std::cout << "1" << std::endl;  // second jump here.
+    quintic_traj::getPolySplineCurrentParams(t - dt, quat_old, w_old, dw_old, qcoeffs, t0_here);
+  }
 
-   if (std::isnan(qcoeffs.p4.w()))
+   if (std::isnan(qcoeffs.p4.w())){
+     // std::cout << "2" << std::endl;
      quintic_traj::computeCubicTraj(qcoeffs, t - t0_here, q, dq, ddq);
-   else
+   }
+
+   else{
+     // std::cout << "3" << std::endl;  // first jump here.
      quintic_traj::computeQuarticTraj(qcoeffs, t - t0_here, q, dq, ddq);
-
-//    std::cout << q.norm() << std::endl;
-
+   }
    quat = q.normalized();
 
-   //save data for the next step:
-//   quat_old = quat;
-//   w_old = w;
-//   dw_old = dw;
-
-//   std::cout << "=================================" << std::endl;
-//   std::cout << "t: " << t << std::endl;
-//   std::cout << qcoeffs.p4.coeffs().transpose() << std::endl;
-
-  qcoeffs_old = qcoeffs;
+   qcoeffs_old = qcoeffs;
 
   }
   else{
 
-  if (traj_Angular_successive && fabs(t - t0) > dt/2){
-    t0_updated  = t - dt;
-    quintic_traj::computeCoeffs_Angular();
-  }
+    if (traj_Angular_successive && fabs(t - t0) > dt/2){
+      t0_updated  = t - dt;
+      quintic_traj::computeCoeffs_Angular();
+    }
 
-  double T = tf - t0_updated;
-  double tau = (t - t0_updated)/T;
+    double T = tf - t0_updated;
+    double tau = (t - t0_updated)/T;
 
-
-
-  quintic_traj::computeQuaternionAndDerives(tau, q, dq, ddq);
-
-//   double N = q.norm();
-//   if (std::abs(N - 1) > 0.00001){
-//     std::cout << N << std::endl;
-//   }
-
-//   std::cout << q.norm() << std::endl;
-
-  quat = q.normalized();
-
-  dq.coeffs().noalias() = dq.coeffs()/T;
-  ddq.coeffs().noalias() = ddq.coeffs()/T/T;
+    quintic_traj::computeQuaternionAndDerives(tau, q, dq, ddq);  // equ(12) and derivatives
+    quat = q.normalized();
+    dq.coeffs().noalias() = dq.coeffs()/T;
+    ddq.coeffs().noalias() = ddq.coeffs()/T/T;
 
   }
 
-
-
-
-//   Eigen::Quaterniond w_quat, q_inverse;
   q_inverse = q.inverse();
 
   w_quat = dq * q_inverse;
-  w_quat.coeffs() *= 2;
-//   w_quat.vec() *= 2;
-
+  w_quat.coeffs() *= 2;  // equ(6)
   w = w_quat.vec();
 
-  dw.noalias() = (ddq * q_inverse).vec()*2 - (w_quat * dq * q_inverse).vec();
+  dw.noalias() = (ddq * q_inverse).vec()*2 - (w_quat * dq * q_inverse).vec();  // equ(7)
 
   //save data for the next step:
   quat_old = quat;
@@ -655,15 +606,11 @@ void quintic_traj::computeDDN(const double t, const double T, double& ddN){
   Eigen::Quaterniond q, dq, ddq;
   quintic_traj::computeQuaternionAndDerives(t, q, dq, ddq);
   dq.coeffs() /= T;
-//   dq.vec() /=T;
-
   ddq.coeffs() /= pow(T, 2);
-//   ddq.vec() /=pow(T, 2);
 
   double N = q.norm();
-
-  double dN = 1/N*q.coeffs().dot(dq.coeffs());
-  ddN = 1/N*(q.coeffs().dot(ddq.coeffs()) + dq.coeffs().dot(dq.coeffs()) - dN*dN);
+  double dN = 1/N*q.coeffs().dot(dq.coeffs());  // equ(17)
+  ddN = 1/N*(q.coeffs().dot(ddq.coeffs()) + dq.coeffs().dot(dq.coeffs()) - dN*dN);  // equ(18)
 
 }
 
@@ -781,42 +728,33 @@ void quintic_traj::computeCoeffs_Angular (bool first_step){
     if (traj_type_Angular == "quintic"){
 
       if (!first_step){
-	double ddN;
-	quintic_traj::computeDDN(2*dt/(T+dt), T+dt, ddN);
+      	double ddN;
+      	quintic_traj::computeDDN(2*dt/(T+dt), T+dt, ddN);
       }
-
 
       p10_eigen = Eigen::Quaterniond(0, w_old[0]/2, w_old[1]/2, w_old[2]/2);
       p20_eigen = Eigen::Quaterniond(-.25*pow(w_old.norm(), 2) + ddN, dw_old[0]/2, dw_old[1]/2, dw_old[2]/2);
 
-      Eigen::Quaterniond dquat0 = p10_eigen * quat_old;
-      Eigen::Quaterniond ddquat0 = p20_eigen * quat_old;
+      Eigen::Quaterniond dquat0 = p10_eigen * quat_old;  // equ(6)
+      Eigen::Quaterniond ddquat0 = p20_eigen * quat_old; // equ(7)
 
+      //// equ(13):
       p_Angular0 = quat_old;
-
       p_Angular1.coeffs().noalias() = 3*quat_old.coeffs() + dquat0.coeffs()*T;
-//       p_Angular1.vec() = 3*quat_old.vec() + dquat0.vec()*T;
-
       p_Angular2.coeffs().noalias() = (ddquat0.coeffs()*T*T + 6*dquat0.coeffs()*T + 12*quat_old.coeffs())/2;
-//       p_Angular2.vec() = (ddquat0.vec()*T*T + 6*dquat0.vec()*T + 12*quat_old.vec())/2;
-
       p_Angular3 = quatf;
-
       p_Angular4.coeffs().noalias() = 3*quatf.coeffs() - dquatf.coeffs()*T;
-//       p_Angular4.vec() = 3*quatf.vec() - dquatf.vec()*T;
-
       p_Angular5.coeffs().noalias() = (ddquatf.coeffs()*T*T - 6*dquatf.coeffs()*T + 12*quatf.coeffs())/2;
-//       p_Angular5.vec() = (ddquatf.vec()*T*T - 6*dquatf.vec()*T + 12*quatf.vec())/2;
 
-//       p_Angular.clear();
       p_Angular[0] = p_Angular0;
-      p_Angular[1] =  p_Angular1;
+      p_Angular[1] = p_Angular1;
       p_Angular[2] = p_Angular2;
       p_Angular[3] = p_Angular3;
       p_Angular[4] = p_Angular4;
       p_Angular[5] = p_Angular5;
 
-    }else { //traj_type_Angular == "cubic"
+    }
+    else { //traj_type_Angular == "cubic"
       p10_eigen = Eigen::Quaterniond(0, w_old[0]/2, w_old[1]/2, w_old[2]/2);
       p20_eigen = Eigen::Quaterniond(-.25*pow(w_old.norm(), 2), dw_old[0]/2, dw_old[1]/2, dw_old[2]/2);
 
@@ -1229,63 +1167,47 @@ void quintic_traj::getPolySplineCurrentParams(const double& t,
 					      const Eigen::Quaterniond& q, const Eigen::Vector3d& w, const Eigen::Vector3d dw,
 				              QCoeffs& p, double& t0_here)
 {
-//   size_t N = t_all.size(); //TODO: make sure t_all is overridden
+
   ind_poly = 0;
+
   if ((t + dt) >= t_all[1] && (t + dt) < t_all[N - 2]){
     for (int j= 1; j < N - 2; j++){
       if ((t + dt) < t_all[j+1] && (t + dt) >= t_all[j]){
-	ind_poly = j;
-	break;
+      	ind_poly = j;
+      	break;
       }
     }
-  }else if((t + dt) >= t_all[N - 2]) ind_poly = N - 2;
-
-//   if (t > 1.498 && t < 1.501 )
-//   {
-//     int fake = 0;
-//   }
+  }
+  else if((t + dt) >= t_all[N - 2]) ind_poly = N - 2;
 
   p = VQcoeffs[ind_poly];
   t0_here = t_all[ind_poly];
 
-//   std::cout << " I am here 0" << std::endl;
-
-  if (traj_Angular_successive) quintic_traj::ifSRPoly(t, q, w, dw, p, t0_here);
+  if (traj_Angular_successive)
+    quintic_traj::ifSRPoly(t, q, w, dw, p, t0_here);
 
 }
+
 
 void quintic_traj::ifSRPoly(const double& t, const Eigen::Quaterniond& q, const Eigen::Vector3d& w, const Eigen::Vector3d dw,
 			    QCoeffs& p, double& t0_here)
 {
-//     t_all_updated.push_back(t);
-//     quat_all_updated.push_back(q);
-//     for (int i = ind + 1; i < N; i++)
-//     {
-//       t_all_updated.push_back(t_all[i]);
-//       quat_all_updated.push_back(quat_all[i]);
-//     }
-
-//   if (ind_poly == 1)
-//   {
-//     double temp = 1;
-//   }
-
     t_all_updated = t_all;
     quat_all_updated = quat_all;
-//     for (int i = 0; i < ind_poly; i++) t_all_updated[i] = NAN; //quat_all_updated follows this update.
     t_all_updated[ind_poly] = t;
     quat_all_updated[ind_poly] = q;
 
 
     double dN, ddN;
-    quintic_traj::computeQuatNormDerivs(qcoeffs_old, 2*dt, dN, ddN);
+    quintic_traj::computeQuatNormDerivs(qcoeffs_old, 2*dt, dN, ddN);  // equ(17, 18)
     dN = 0;
-//     ddN = 0;
 
+    //// equ(21):
     dq_sr.vec().noalias() = w/2;
     dq_sr.w() = dN/2;
     dq_sr = dq_sr * q;
 
+    //// equ(22):
     ddq_sr.vec().noalias() = dw/2 + w*dN;
     ddq_sr.w() = -.25*pow(w.norm(), 2) + ddN;
     ddq_sr = ddq_sr * q;
@@ -1313,7 +1235,6 @@ void quintic_traj::computeCoeffs_first(const double& h, const double& dvi,
   vec2 << pv.xii - pv.xi - pv.vi*h - dvi/2.*h*h, pv.vii - pv.vi - dvi*h;
 
   a3a4.noalias() = m22 * vec2;
-
 }
 
 void quintic_traj::computeCoeffs_last(const double& h, const double& dvii,
@@ -1323,7 +1244,6 @@ void quintic_traj::computeCoeffs_last(const double& h, const double& dvii,
   vec3 << pv.xii - pv.xi - pv.vi*h, pv.vii - pv.vi, dvii;
 
   a2a3a4.noalias() = m33 * vec3;
-
 }
 
 void quintic_traj::computeCoeffs_general(const double& h, Eigen::Vector2d& a2a3)
@@ -1332,20 +1252,17 @@ void quintic_traj::computeCoeffs_general(const double& h, Eigen::Vector2d& a2a3)
   vec2 << pv.xii - pv.xi - pv.vi*h, pv.vii - pv.vi;
 
   a2a3.noalias() = m22 * vec2;
-
 }
 
 void quintic_traj::computePolySplineCPointsAux(const std::vector<double>& t, const Eigen::VectorXd& x,
 				               const bool& eval_A, const std::string& stype)
 {
-//   size_t N = t.size();
 
   if (stype == "004")
     {
       pv = (PosVel){x[N - 2], x[N - 1], vdv.v0, vdv.vN};
       quintic_traj::computeCoeffs_last(t[N - 1] - t[N - 2], vdv.dvN, vec3_temp);
       Vcoeffs[N - 2] = (Coeffs){x[N - 2], vdv.v0, vec3_temp[0], vec3_temp[1], vec3_temp[2]};
-//       v << vdv.v0, vdv.vN;
       return;
     }
 
@@ -1353,33 +1270,37 @@ void quintic_traj::computePolySplineCPointsAux(const std::vector<double>& t, con
 
   for (int i = ind_poly; i < N - 1; i++)
     {
-	if (i == ind_poly)
-	  {
-	  if (stype == "334")
-	    {
-	      pv = (PosVel){x[i], x[i+1], v_all[i], v_all[i+1]};
-	      quintic_traj::computeCoeffs_general(t[i+1] - t[i], vec2_temp);
-	      Vcoeffs[i] = (Coeffs){x[i], v_all[i], vec2_temp[0], vec2_temp[1], NAN};
-	    }
-	  else
-	    {
-	      pv = (PosVel){x[i], x[i+1], vdv.v0, v_all[i+1]};
-	      quintic_traj::computeCoeffs_first(t[i+1] - t[i], vdv.dv0, vec2_temp);
-	      Vcoeffs[i] = (Coeffs){x[i], v_all[i], vdv.dv0/2., vec2_temp[0], vec2_temp[1]};
-	    }
-	  }
-	else if (i == N - 2)
-	  {
-	    pv = (PosVel){x[i], x[i+1], v_all[i], v_all[i+1]};
-	    quintic_traj::computeCoeffs_last(t[i+1] - t[i], vdv.dvN, vec3_temp);
-	    Vcoeffs[i] = (Coeffs){x[i], v_all[i], vec3_temp[0], vec3_temp[1], vec3_temp[2]};
-	  }
-	else
-	  {
-	    pv = (PosVel){x[i], x[i+1], v_all[i], v_all[i+1]};
-	    quintic_traj::computeCoeffs_general(t[i+1] - t[i], vec2_temp);
-	    Vcoeffs[i] = (Coeffs){x[i], v_all[i], vec2_temp[0], vec2_temp[1], NAN};
-	  }
+    	if (i == ind_poly)
+    	  {
+      	  if (stype == "334")
+      	    {
+              // std::cout << "general 1" << std::endl;
+      	      pv = (PosVel){x[i], x[i+1], v_all[i], v_all[i+1]};
+      	      quintic_traj::computeCoeffs_general(t[i+1] - t[i], vec2_temp);
+      	      Vcoeffs[i] = (Coeffs){x[i], v_all[i], vec2_temp[0], vec2_temp[1], NAN};
+      	    }
+      	  else
+      	    {
+              // std::cout << "first" << std::endl;
+      	      pv = (PosVel){x[i], x[i+1], vdv.v0, v_all[i+1]};
+      	      quintic_traj::computeCoeffs_first(t[i+1] - t[i], vdv.dv0, vec2_temp);
+      	      Vcoeffs[i] = (Coeffs){x[i], v_all[i], vdv.dv0/2., vec2_temp[0], vec2_temp[1]};
+      	    }
+    	  }
+    	else if (i == N - 2)
+    	  {
+          // std::cout << "last" << std::endl;
+    	    pv = (PosVel){x[i], x[i+1], v_all[i], v_all[i+1]};
+    	    quintic_traj::computeCoeffs_last(t[i+1] - t[i], vdv.dvN, vec3_temp);
+    	    Vcoeffs[i] = (Coeffs){x[i], v_all[i], vec3_temp[0], vec3_temp[1], vec3_temp[2]};
+    	  }
+    	else
+    	  {
+          // std::cout << "general 2" << std::endl;
+    	    pv = (PosVel){x[i], x[i+1], v_all[i], v_all[i+1]};
+    	    quintic_traj::computeCoeffs_general(t[i+1] - t[i], vec2_temp);
+    	    Vcoeffs[i] = (Coeffs){x[i], v_all[i], vec2_temp[0], vec2_temp[1], NAN};
+    	  }
 
     }
 }
@@ -1478,7 +1399,6 @@ void quintic_traj::computePolySplineV(const std::vector<double>& t, const Eigen:
 void quintic_traj::computePolySplineCpoints(const std::vector<double>& t, const std::vector<Eigen::Quaterniond>& x,
 					    std::string stype)
 {
-//   size_t N = t.size();
 
   bool eval_A = true;
   for (int j = 0; j<4; j++)
@@ -1489,23 +1409,17 @@ void quintic_traj::computePolySplineCpoints(const std::vector<double>& t, const 
     vdv = (VdV){dqddq.dq0.coeffs()[j], dqddq.dqf.coeffs()[j], dqddq.ddq0.coeffs()[j], dqddq.ddqf.coeffs()[j]};
     quintic_traj::computePolySplineCPointsAux(t, quat_elements_temp, eval_A, stype);
 
-
-
-
-
     for (int i = ind_poly; i < N - 1 ; i++) //TODO: VQcoeffs should be passed by the correct size (N - 1)
     {
-	VQcoeffs[i].p0.coeffs()[j] = Vcoeffs[i].a0;
-	VQcoeffs[i].p1.coeffs()[j] = Vcoeffs[i].a1;
-	VQcoeffs[i].p2.coeffs()[j] = Vcoeffs[i].a2;
-	VQcoeffs[i].p3.coeffs()[j] = Vcoeffs[i].a3;
-	VQcoeffs[i].p4.coeffs()[j] = Vcoeffs[i].a4;
+    	VQcoeffs[i].p0.coeffs()[j] = Vcoeffs[i].a0;
+    	VQcoeffs[i].p1.coeffs()[j] = Vcoeffs[i].a1;
+    	VQcoeffs[i].p2.coeffs()[j] = Vcoeffs[i].a2;
+    	VQcoeffs[i].p3.coeffs()[j] = Vcoeffs[i].a3;
+    	VQcoeffs[i].p4.coeffs()[j] = Vcoeffs[i].a4;
     }
-//     std::cout << "\n \n we are here !!!!! \n \n" << std::endl;
 
     if (j == 0) eval_A = false;
   }
-
 }
 
 void quintic_traj::computeCubicTraj(const QCoeffs& p, const double& tau,
@@ -1531,25 +1445,17 @@ void quintic_traj::computeQuatNormDerivs(const QCoeffs& p, const double& t,
 					 double& dN, double& ddN)
 {
 
-  if (std::isnan(p.p4.w()))
+  if (std::isnan(p.p4.w())){
+     // std::cout << "cubic" << std::endl;  // second jump here.
      quintic_traj::computeCubicTraj(p, t, q_norm, dq_norm, ddq_norm);
-   else
+   }
+   else{
+     // std::cout << "quintic" << std::endl;  // first jump here.
      quintic_traj::computeQuarticTraj(p, t, q_norm, dq_norm, ddq_norm);
-
+   }
   double n = q_norm.norm();
-  dN = 1/n*q_norm.coeffs().dot(dq_norm.coeffs());
-  ddN =1/n * (q_norm.coeffs().dot(ddq_norm.coeffs()) + dq_norm.coeffs().dot(dq_norm.coeffs()) - dN*dN);
-//   std::cout << p.p0.w() <<  " " << p.p0.vec().transpose() << std::endl;
-//   std::cout << p.p1.w() <<  " " << p.p1.vec().transpose() << std::endl;
-//   std::cout << p.p2.w() <<  " " << p.p2.vec().transpose() << std::endl;
-//   std::cout << p.p3.w() <<  " " << p.p3.vec().transpose() << std::endl;
-//   std::cout << p.p4.w() <<  " " << p.p4.vec().transpose() << std::endl;
-//   std::cout << q_norm.w() << " " << q_norm.vec().transpose() << std::endl;
-//   std::cout << dq_norm.w() << " " << dq_norm.vec().transpose() << std::endl;
-//   std::cout << ddq_norm.w() << " " << ddq_norm.vec().transpose() << std::endl;
-//   std::cout << "dN, " << dN << std::endl;
-//   std::cout << "ddN, " << ddN << std::endl;
-
+  dN = 1/n*q_norm.coeffs().dot(dq_norm.coeffs());  // equ(17)
+  ddN =1/n * (q_norm.coeffs().dot(ddq_norm.coeffs()) + dq_norm.coeffs().dot(dq_norm.coeffs()) - dN*dN);  // equ(18)
 
 }
 
